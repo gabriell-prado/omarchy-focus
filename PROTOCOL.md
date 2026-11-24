@@ -50,12 +50,19 @@ holds no domain knowledge of its own.
   "soundPresets": [{"id":"speech","evidence":"moderate","noiseColor":"pink","noiseVolume":50,
                     "beatMode":"off","beatHz":0,"carrierHz":0,"toneVolume":0,"refs":"…"}],
   "alerts": ["none","chime","bowl","beep","rise","complete","bell","message","alarm","attention","login","phone","custom"],
-  "noiseColors": ["off","white","pink","brown"],
+  "noiseColors": ["off","white","pink","brown","custom"],
   "beatModes": ["off","binaural","isochronic"],
   "bands": [["delta",0],["theta",4],["alpha",8],["beta",13],["gamma",30]],
+  "eqBands": [31.5,63,125,250,500,1000,2000,4000,8000,16000],
+  "eqShapes": {"white":[21,25,30,35,42,50,60,71,84,100],"pink":[100,"…"],"brown":[100,84,"…",21]},
   "limits": {"focusMinutes":[1,180], "…": "…"}
 }}
 ```
+
+`eqBands` are the custom noise's octave band centres (Hz) and `eqShapes` the
+`noiseBands` levels (0–100) that sound like each named color, so an
+equalizer UI can show the playing color's shape and start a custom noise
+from it.
 
 Preset and alert names and notes are translated by the client from its i18n
 catalog (`preset.<id>.name`, `preset.<id>.note`, `evidence.<level>`,

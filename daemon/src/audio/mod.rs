@@ -8,7 +8,7 @@ pub mod output;
 pub mod tone;
 pub mod wav;
 
-use crate::settings::{BeatMode, NoiseColor, Settings};
+use crate::settings::{BeatMode, NoiseColor, Settings, NOISE_BANDS};
 
 pub const SAMPLE_RATE: u32 = 48_000;
 pub const SAMPLE_RATE_F: f64 = SAMPLE_RATE as f64;
@@ -31,6 +31,8 @@ pub struct ToneSpec {
 pub struct Mix {
     pub noise: Option<NoiseColor>,
     pub noise_gain: f32,
+    /// Octave band levels (0–100) for `NoiseColor::Custom`.
+    pub noise_bands: [f32; NOISE_BANDS],
     pub tone: Option<ToneSpec>,
     pub tone_gain: f32,
 }
@@ -42,7 +44,9 @@ impl Mix {
 
     /// The mix the settings describe, assuming the sound should play.
     pub fn from_settings(s: &Settings) -> Mix {
-        let noise = (s.noise_color != NoiseColor::Off && s.noise_volume > 0).then_some(s.noise_color);
+        // A custom noise with every band down is silence, not a flat shape.
+        let shaped_silent = s.noise_color == NoiseColor::Custom && s.noise_bands.iter().all(|b| *b == 0);
+        let noise = (s.noise_color != NoiseColor::Off && s.noise_volume > 0 && !shaped_silent).then_some(s.noise_color);
         let tone = (s.beat_mode != BeatMode::Off && s.tone_volume > 0).then_some(ToneSpec {
             mode: s.beat_mode,
             beat_hz: s.beat_hz as f64,
@@ -51,6 +55,7 @@ impl Mix {
         Mix {
             noise,
             noise_gain: if noise.is_some() { linear_gain(s.noise_volume) } else { 0.0 },
+            noise_bands: s.noise_bands.map(|b| b as f32),
             tone,
             tone_gain: if tone.is_some() { linear_gain(s.tone_volume) } else { 0.0 },
         }

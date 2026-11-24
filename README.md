@@ -77,8 +77,22 @@ focus (󰔛), breaks (󰅶) and pause (󰏤).
   continuous until you switch it off. Picking a preset or changing the sound
   switches it on; when it follows the timer and no focus session is running,
   the change is previewed until you close the panel.
-- **Tune**: noise color, brainwave tone (binaural / isochronic), beat frequency
-  with its EEG band, and carrier tone.
+- **Tune**: noise color, a ten-band equalizer to shape the noise by hand, the
+  brainwave tone (binaural / isochronic), beat frequency with its EEG band,
+  and carrier tone.
+
+### Shaping the noise
+
+The Tune page has one vertical slider per octave, 31 Hz to 16 kHz. While a
+color is playing they show its shape; moving one switches to a **Custom**
+noise that starts from what you hear. It is pink noise split into ten octave
+bands, each from its own generator, cut out by 4th-order Butterworth edges:
+equal sliders are pink (flat to 0.02 dB), a rising shape is brighter, a
+falling one darker, and a band at zero is silent without touching its
+neighbours. The engine keeps every shape exactly as loud as pink (matched in
+K-weighted loudness, like a LUFS meter), so the sliders change the color and
+the volume slider stays in charge of the level. Changes are heard while you
+drag, gliding over 80 ms.
 - **Alerts**: separate sounds for *focus ends* and *break ends* (4 synthesised
   tones, 7 freedesktop sounds, or a custom file). The arrows choose and play
   the previous/next sound; clicking the name plays it again. Also volume,
@@ -117,7 +131,8 @@ start the engine imports the settings the earlier QML-only version kept in
 | `sessionsBeforeLongBreak` | 4 | 1–12 |
 | `autoStartBreaks` / `autoStartFocus` | true / false | |
 | `soundEnabled` / `soundOnlyDuringFocus` | false / true | |
-| `noiseColor` | `pink` | `off` `white` `pink` `brown` |
+| `noiseColor` | `pink` | `off` `white` `pink` `brown` `custom` |
+| `noiseBands` | ten × 100 | 0–100 per octave band (31 Hz … 16 kHz), used by `custom` |
 | `noiseVolume` / `toneVolume` | 50 / 35 | 0–100 (square-law curve) |
 | `beatMode` | `off` | `off` `binaural` `isochronic` |
 | `beatHz` / `carrierHz` | 16 / 250 | 1–45 / 100–600 |

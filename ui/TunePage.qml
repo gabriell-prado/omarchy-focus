@@ -25,6 +25,10 @@ Column {
 
   Note { ctx: page.ctx; text: page.ctx.t("tune.noise.note") }
 
+  NoiseEqualizer { ctx: page.ctx }
+
+  Note { ctx: page.ctx; text: page.ctx.t("tune.eq.note") }
+
   PanelSeparator { width: parent.width; foreground: page.ctx.fg }
 
   PanelSectionHeader { text: page.ctx.t("tune.tone"); foreground: page.ctx.fg; fontFamily: page.ctx.fontFamily }

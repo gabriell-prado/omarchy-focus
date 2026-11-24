@@ -17,6 +17,8 @@ pub enum NoiseColor {
     White,
     Pink,
     Brown,
+    /// Pink noise shaped by the ten octave bands in `noise_bands`.
+    Custom,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -27,7 +29,11 @@ pub enum BeatMode {
     Isochronic,
 }
 
-pub const NOISE_COLORS: [NoiseColor; 4] = [NoiseColor::Off, NoiseColor::White, NoiseColor::Pink, NoiseColor::Brown];
+pub const NOISE_COLORS: [NoiseColor; 5] =
+    [NoiseColor::Off, NoiseColor::White, NoiseColor::Pink, NoiseColor::Brown, NoiseColor::Custom];
+
+/// Octave bands of the custom noise (31.5 Hz to 16 kHz).
+pub const NOISE_BANDS: usize = 10;
 pub const BEAT_MODES: [BeatMode; 3] = [BeatMode::Off, BeatMode::Binaural, BeatMode::Isochronic];
 
 impl NoiseColor {
@@ -56,6 +62,8 @@ pub struct Settings {
     pub sound_only_during_focus: bool,
     pub noise_color: NoiseColor,
     pub noise_volume: u32,
+    /// Level of each octave band of the custom noise, 0–100; all equal is pink.
+    pub noise_bands: [u32; NOISE_BANDS],
     pub beat_mode: BeatMode,
     pub beat_hz: u32,
     pub carrier_hz: u32,
@@ -82,6 +90,7 @@ impl Default for Settings {
             sound_only_during_focus: true,
             noise_color: NoiseColor::Pink,
             noise_volume: 50,
+            noise_bands: [100; NOISE_BANDS],
             beat_mode: BeatMode::Off,
             beat_hz: 16,
             carrier_hz: 250,
@@ -220,6 +229,17 @@ fn coerce(key: &str, value: &Value, default: &Value, strict: bool) -> Option<Val
         return Some(Value::from(n.round().clamp(lo as f64, hi as f64) as u32));
     }
     match default {
+        Value::Array(_) if key == "noiseBands" => {
+            let items = value.as_array()?;
+            if items.len() != NOISE_BANDS {
+                return None;
+            }
+            let levels: Option<Vec<Value>> = items
+                .iter()
+                .map(|v| number_of(v).filter(|n| n.is_finite()).map(|n| Value::from(n.round().clamp(0.0, 100.0) as u32)))
+                .collect();
+            levels.map(Value::Array)
+        }
         Value::Bool(_) => bool_of(value, strict).map(Value::Bool),
         Value::String(_) => {
             let s = value.as_str()?;
@@ -272,6 +292,17 @@ mod tests {
         assert!(d.patched(json!({"noiseColor": "purple"}).as_object().unwrap()).is_err());
         assert!(d.patched(json!({"autoStartBreaks": "maybe"}).as_object().unwrap()).is_err());
         assert_eq!(d.patched(json!({"focusMinutes": 500}).as_object().unwrap()).unwrap().focus_minutes, 180);
+    }
+
+    #[test]
+    fn noise_bands_are_ten_levels() {
+        let d = Settings::default();
+        let s = d.patched(json!({"noiseColor": "custom", "noiseBands": [0, 10, 20, 30, 40, 50, 60, 70, 80, 150]}).as_object().unwrap()).unwrap();
+        assert_eq!(s.noise_color, NoiseColor::Custom);
+        assert_eq!(s.noise_bands, [0, 10, 20, 30, 40, 50, 60, 70, 80, 100], "clamped to 100");
+        assert!(d.patched(json!({"noiseBands": [1, 2, 3]}).as_object().unwrap()).is_err(), "wrong length");
+        assert!(d.patched(json!({"noiseBands": "loud"}).as_object().unwrap()).is_err());
+        assert_eq!(Settings::from_value(&json!({"noiseBands": [1, 2]})).noise_bands, [100; NOISE_BANDS], "lenient load falls back");
     }
 
     #[test]

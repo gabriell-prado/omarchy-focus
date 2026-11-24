@@ -116,6 +116,13 @@ fn settings_presets_and_errors() {
     let config = d.root.join("config/omarchy-focus/config.toml");
     wait_for(|| std::fs::read_to_string(&config).unwrap_or_default().contains("beatMode = \"binaural\""), "config.toml to be written");
 
+    d.ok(&["set", "noiseColor", "custom"]);
+    d.ok(&["set", "noiseBands", "[0,0,0,50,100,100,100,50,0,0]"]);
+    let s = d.status();
+    assert_eq!((s["settings"]["noiseColor"].as_str(), s["soundPreset"].as_str()), (Some("custom"), Some("custom")));
+    assert_eq!(s["settings"]["noiseBands"][4], 100);
+    assert!(!d.cli(&["set", "noiseBands", "[1,2,3]"]).status.success(), "ten bands required");
+
     let bad = d.cli(&["set", "noiseColor", "purple"]);
     assert!(!bad.status.success());
     assert!(String::from_utf8_lossy(&bad.stderr).contains("invalid value"));

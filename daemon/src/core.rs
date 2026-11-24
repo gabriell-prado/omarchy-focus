@@ -5,13 +5,14 @@
 
 use crate::audio::alerts::{self, ALERT_IDS};
 use crate::audio::engine::{Cmd, Engine, Status as AudioStatus};
+use crate::audio::noise::{shape_for, BAND_HZ};
 use crate::audio::{linear_gain, Mix};
 use crate::i18n::{self, Strings};
 use crate::notify::Notifier;
 use crate::paths::Paths;
 use crate::presets::{self, CUSTOM_TIMER_REFS, SOUND_PRESETS, TIMER_PRESETS};
 use crate::protocol::{self, Command, PresetKind};
-use crate::settings::{Settings, BEAT_MODES, INT_LIMITS, NOISE_COLORS};
+use crate::settings::{NoiseColor, Settings, BEAT_MODES, INT_LIMITS, NOISE_COLORS};
 use crate::state;
 use crate::timer::{self, Phase, Timer, Transition};
 use serde_json::{json, Map, Value};
@@ -68,6 +69,14 @@ pub fn catalog() -> Value {
         "noiseColors": NOISE_COLORS,
         "beatModes": BEAT_MODES,
         "bands": [["delta", 0], ["theta", 4], ["alpha", 8], ["beta", 13], ["gamma", 30]],
+        // The custom noise's octave bands, and the slider shapes that sound
+        // like each named color (all equal is pink).
+        "eqBands": BAND_HZ,
+        "eqShapes": {
+            "white": shape_for(NoiseColor::White),
+            "pink": shape_for(NoiseColor::Pink),
+            "brown": shape_for(NoiseColor::Brown),
+        },
         "limits": limits,
     })
 }
