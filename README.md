@@ -1,18 +1,57 @@
-# Focus: an Omarchy shell plugin
+# Focus: Pomodoro and focus sounds for Omarchy
 
 A Pomodoro timer in the bar, with **research-based focus sounds** (white, pink
 and brown noise, binaural and isochronic beats) and **selectable alert
-sounds**. Every preset shows a plain-language summary of the research, how strong
-the evidence is, and the citations.
+sounds**. Every preset shows a plain-language summary of the research, how
+strong the evidence is, and the citations.
 
-Everything is generated live with `ffmpeg` (no audio files to download) and
-played through PipeWire as the streams **Focus noise**, **Focus tone** and
-**Focus alert**, so they show up in the audio panel like any other app.
+## Architecture
 
-The focus sound is continuous: once on, it plays without stopping until you
-turn it off, unless *Only during focus sessions* links it to the timer.
-Volume changes apply live to the streams (no restart, no gap), and changing
-the sound itself crossfades from the old generator to the new one.
+```
+┌────────────── Omarchy shell (Quickshell, QML) ────────────┐
+│  Panel.qml + ui/   bar widget and panel, one per monitor  │
+│  Service.qml       one socket client shared by all panels │
+└──────────────────────────────┬────────────────────────────┘
+                               │  $XDG_RUNTIME_DIR/omarchy-focus.sock
+                               │  newline-delimited JSON (PROTOCOL.md)
+┌──────────────────────────────┴────────────────────────────┐
+│  omarchy-focus daemon (Rust, systemd user service)        │
+│    timer state machine · settings · presets · state file  │
+│    audio: noise / tone / alert synthesis → mixer → Pulse  │
+│    desktop notifications · i18n · CLI                     │
+└───────────────────────────────────────────────────────────┘
+```
+
+The shell only loads plugin UI written in QML, so the bar widget and panel
+stay QML; they are a thin view and hold no logic of their own. Everything else
+is the **Focus engine**, a small Rust daemon:
+
+- The timer and the sound keep running through shell restarts and plugin
+  reloads. A daemon restart resumes the session from its state file.
+- Audio is synthesised in-process and played as one PulseAudio/PipeWire
+  stream, **Focus**. Volume changes ramp in 80 ms, a different sound
+  crossfades over 400 ms, stopping fades out, and only one alert plays at a
+  time. Nothing is restarted and nothing clicks.
+- One source of truth for settings (`~/.config/omarchy-focus/config.toml`),
+  shared by the panel, the CLI and hand edits.
+- A CLI, `omarchy-focus`, that works with or without the shell.
+
+## Install
+
+Requires the Rust toolchain (`cargo`) and PulseAudio's client library (on
+Omarchy it comes with PipeWire). From this folder:
+
+```bash
+make install            # build, install ~/.local/bin/omarchy-focus, enable the user service
+omarchy restart shell   # load the panel
+```
+
+`make test` runs the engine's tests, `make logs` follows its log, and
+`make uninstall` removes the binary and the service. Builds go to
+`~/.cache/omarchy-focus`, outside this folder, because the shell reloads the
+plugin whenever a file inside it changes.
+
+If the engine is not running, the panel says so and offers to start it.
 
 ## Using it
 
@@ -28,51 +67,48 @@ the sound itself crossfades from the old generator to the new one.
 The bar shows the remaining time while a session runs. The icon changes for
 focus (󰔛), breaks (󰅶) and pause (󰏤).
 
-### Pages
-
 - **Timer**: method presets (25/5, 50/10, 52/17, 90/20) with the evidence for
   each, sliders for focus / short break / long break / sessions per set, and
   auto-start switches.
 - **Sound**: master switch, seven research-based presets, the evidence card,
-  noise and tone volume, and *Only during focus sessions* (default on: sound
-  starts with a focus session and stops for pauses and breaks). Picking a
-  preset or changing the sound switches it on. When it is linked to the timer
-  and no focus session is running, the change is previewed until you close
-  the panel.
+  noise and tone volume, and *Only during focus sessions* (sound starts with a
+  focus session and stops for pauses and breaks). Otherwise the sound is
+  continuous until you switch it off. Picking a preset or changing the sound
+  switches it on; when it follows the timer and no focus session is running,
+  the change is previewed until you close the panel.
 - **Tune**: noise color, brainwave tone (binaural / isochronic), beat frequency
   with its EEG band, and carrier tone.
-- **Alerts**: separate sounds for *focus ends* and *break ends* (5 synthesized
-  tones + 7 freedesktop sounds + a custom file). The arrows choose and play
-  the previous/next sound; clicking the name plays it again. Only one alert
-  plays at a time: a new one cuts off the one still sounding. Also volume,
+- **Alerts**: separate sounds for *focus ends* and *break ends* (4 synthesised
+  tones, 7 freedesktop sounds, or a custom file). The arrows choose and play
+  the previous/next sound; clicking the name plays it again. Also volume,
   desktop notifications, and whether to show the time in the bar.
 
-### Keyboard shortcuts and scripts
-
-The engine answers IPC on the `focus` target:
+### Command line
 
 ```bash
-omarchy-shell focus toggle    # start / pause
-omarchy-shell focus start | pause | reset | skip
-omarchy-shell focus sound     # focus sound on / off
-omarchy-shell focus status    # JSON: phase, running, left, session, today, sound
-omarchy-shell focus alert bowl     # play an alert sound (stops any playing alert)
-omarchy-shell local.focus toggle   # open / close the panel
+omarchy-focus toggle | start | pause | reset | skip
+omarchy-focus sound [on|off|toggle]
+omarchy-focus preset timer classic|deep|desktime|ultradian
+omarchy-focus preset sound speech|white|brown|beta|gamma|alpha|iso40
+omarchy-focus set focusMinutes 50          # any setting below
+omarchy-focus alert bowl                   # play an alert (none stops it)
+omarchy-focus status [--full]              # JSON
+omarchy-shell local.focus toggle           # open / close the panel
 ```
 
-To bind them, add to `~/.config/hypr/bindings.lua`. Check the keys are free
-first:
+Keyboard shortcuts, in `~/.config/hypr/bindings.lua` (check the keys are free):
 
 ```lua
-o.bind("SUPER + ALT + P", "Focus timer", "omarchy-shell focus toggle")
-o.bind("SUPER + ALT + N", "Focus sound", "omarchy-shell focus sound")
+o.bind("SUPER + ALT + P", "Focus timer", "omarchy-focus toggle")
+o.bind("SUPER + ALT + N", "Focus sound", "omarchy-focus sound")
 ```
 
 ## Settings
 
-All settings live in this widget's entry in `~/.config/omarchy/shell.json`.
-Only values that differ from the defaults are written. You can change them in
-the panel, in Omarchy's settings, or with `omarchy bar set local.focus <key> <value> --json`.
+`~/.config/omarchy-focus/config.toml`, written by the panel and
+`omarchy-focus set`; hand edits are picked up within a second. On its first
+start the engine imports the settings the earlier QML-only version kept in
+`shell.json`.
 
 | Key | Default | Range |
 |---|---|---|
@@ -86,18 +122,18 @@ the panel, in Omarchy's settings, or with `omarchy bar set local.focus <key> <va
 | `beatHz` / `carrierHz` | 16 / 250 | 1–45 / 100–600 |
 | `focusEndSound` / `breakEndSound` | `bowl` / `chime` | `none` `chime` `bowl` `beep` `rise` `complete` `bell` `message` `alarm` `attention` `login` `phone` `custom` |
 | `alertVolume` | 70 | 0–100 |
-| `customSoundPath` | `""` | absolute or `~/` path; played for at most 30 s |
+| `customSoundPath` | `""` | absolute or `~/` path (ogg, mp3, flac, wav); at most 30 s |
 | `desktopNotifications` / `showTimeInBar` | true / true | |
 
-Timer progress is kept in `~/.local/state/omarchy-focus/state.json`, so a
-shell restart or plugin reload resumes a running session. A session that ended
-while the shell was down more than a minute ago moves on without an alert.
+Timer progress is kept in `~/.local/state/omarchy-focus/state.json`. A
+session that ended more than a minute before the engine started moves on
+without an alert.
 
 ## The science, and how strong it is
 
-Loudness: all three noise colors are calibrated to about −16 LUFS at 100 %,
-so switching color does not jump in volume. Your system volume still sets
-the actual level, so keep it moderate.
+Loudness: the three noise colors play at the same loudness (about −13 LUFS
+stereo at 100 %, measured with EBU R128), so switching color does not jump in
+volume. Your system volume still sets the actual level, so keep it moderate.
 
 | Preset | Sound | Evidence | Basis |
 |---|---|---|---|
@@ -137,23 +173,31 @@ evidence for knowledge work). Brief planned breaks prevent vigilance decrements
 - Söderlund, G. B. W., Sikström, S., Loftesnes, J. M., & Sonuga-Barke, E. J. (2010). The effects of background white noise on memory performance in inattentive school children. *Behavioral and Brain Functions*, 6, 55.
 - WHO & ITU (2019). *H.870: Safe listening devices and systems*.
 
-## Files
+## Development
 
 ```
-manifest.json      plugin manifest + settings schema
-Service.qml        the single engine: timer, sound process, alerts, IPC, state
-Panel.qml          bar widget + panel (one per monitor; draws the service)
-Model.js           pure logic: settings, presets, ffmpeg command builders
-i18n/en.json       English strings (pt-BR.json: Brazilian Portuguese)
-tests/model.test.mjs   node tests; --ffmpeg also renders every sound to a null sink
+manifest.json                 plugin manifest (service + bar widget)
+Panel.qml                     bar button, panel frame, hero, controls, page tabs
+Service.qml                   engine client: socket, reconnect, local countdown
+ui/                           Context (shared helpers) · pages · controls
+Model.js                      UI helpers (glyphs, clock format)
+i18n/en.json, pt-BR.json      strings, shared by the panel and the engine
+PROTOCOL.md                   the socket protocol
+daemon/                       the engine (Rust crate `omarchy-focus`)
+  src/core.rs                   owner of state: commands, ticks, broadcasts
+  src/timer.rs                  Pomodoro state machine (pure, tested)
+  src/settings.rs, presets.rs   typed settings, presets and evidence
+  src/audio/                    noise, tone, alerts, mixer, output
+  tests/daemon.rs               end-to-end tests against the real binary
+systemd/omarchy-focus.service user service
+Makefile                      build · test · install · uninstall
 ```
 
-Run the tests: `node ~/.config/omarchy/plugins/focus/tests/model.test.mjs --ffmpeg`
-
-After editing the QML or JS, run `omarchy restart shell`: the plugin hot-reload
-rebuilds the widget but reuses the previously compiled code. A running session
-survives the restart.
-
-Requires `ffmpeg` (with PulseAudio output, via pipewire-pulse), `setpriv`
-(util-linux) and `notify-send`, all present on Omarchy. The sound generator is
-started with a parent-death signal, so it cannot keep playing if the shell dies.
+- `omarchy-focus render --preset gamma --seconds 10 --out /tmp/x.wav` renders
+  a sound offline (also `--noise <color>`, `--alert <id>`), for listening or
+  measuring with `ffmpeg -af ebur128`.
+- After editing QML, run `omarchy restart shell`: the shell's hot reload
+  rebuilds the widget but reuses previously compiled code. The engine keeps
+  playing through it.
+- After editing the engine, `make install` rebuilds and restarts it; the
+  running session resumes.
