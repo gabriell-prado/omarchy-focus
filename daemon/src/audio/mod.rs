@@ -6,9 +6,10 @@ pub mod engine;
 pub mod noise;
 pub mod output;
 pub mod tone;
+pub mod treatment;
 pub mod wav;
 
-use crate::settings::{BeatMode, NoiseColor, Settings, NOISE_BANDS};
+use crate::settings::{BeatMode, NoiseColor, Settings, TapeSpeed, NOISE_BANDS};
 
 pub const SAMPLE_RATE: u32 = 48_000;
 pub const SAMPLE_RATE_F: f64 = SAMPLE_RATE as f64;
@@ -26,6 +27,22 @@ pub struct ToneSpec {
     pub carrier_hz: f64,
 }
 
+/// How the noise is treated after it is generated (the tone never is).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Treatment {
+    /// 0 = mono, 1 = independent ears.
+    pub width: f32,
+    /// 0 = untouched, 1 = highs rolled off from 2 kHz.
+    pub softness: f32,
+    pub tape: TapeSpeed,
+}
+
+impl Default for Treatment {
+    fn default() -> Self {
+        Treatment { width: 1.0, softness: 0.0, tape: TapeSpeed::Off }
+    }
+}
+
 /// What the focus sound should be right now. `None` sources are silent.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Mix {
@@ -33,6 +50,7 @@ pub struct Mix {
     pub noise_gain: f32,
     /// Octave band levels (0–100) for `NoiseColor::Custom`.
     pub noise_bands: [f32; NOISE_BANDS],
+    pub treatment: Treatment,
     pub tone: Option<ToneSpec>,
     pub tone_gain: f32,
 }
@@ -56,6 +74,11 @@ impl Mix {
             noise,
             noise_gain: if noise.is_some() { linear_gain(s.noise_volume) } else { 0.0 },
             noise_bands: s.noise_bands.map(|b| b as f32),
+            treatment: Treatment {
+                width: s.noise_width.min(100) as f32 / 100.0,
+                softness: s.noise_softness.min(100) as f32 / 100.0,
+                tape: s.tape_speed,
+            },
             tone,
             tone_gain: if tone.is_some() { linear_gain(s.tone_volume) } else { 0.0 },
         }

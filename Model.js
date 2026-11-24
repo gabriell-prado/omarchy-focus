@@ -17,6 +17,7 @@ var GLYPH = {
   bell: "󰂞",
   tune: "󰘮",
   wave: "󱑽",
+  sine: "󰭌",
   left: "󰅁",
   right: "󰅂",
   power: "󰐥"

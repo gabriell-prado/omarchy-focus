@@ -3,6 +3,9 @@ import qs.Commons
 import qs.Ui
 import "../Model.js" as Model
 
+// The brainwave tone: binaural or isochronic beats, their frequency and the
+// carrier. The tone is never treated (no width, softness or tape): a binaural
+// beat needs each ear's tone exactly as generated.
 Column {
   id: page
 
@@ -13,23 +16,6 @@ Column {
 
   width: parent ? parent.width : 0
   spacing: Style.space(10)
-
-  PanelSectionHeader { text: page.ctx.t("tune.noise"); foreground: page.ctx.fg; fontFamily: page.ctx.fontFamily }
-
-  Chips {
-    ctx: page.ctx
-    options: (page.catalog ? page.catalog.noiseColors : []).map(function(c) { return { value: c, label: page.ctx.t("noise." + c) } })
-    value: page.cfg.noiseColor || ""
-    onPicked: function(v) { page.svc.chooseSound({ noiseColor: v }) }
-  }
-
-  Note { ctx: page.ctx; text: page.ctx.t("tune.noise.note") }
-
-  NoiseEqualizer { ctx: page.ctx }
-
-  Note { ctx: page.ctx; text: page.ctx.t("tune.eq.note") }
-
-  PanelSeparator { width: parent.width; foreground: page.ctx.fg }
 
   PanelSectionHeader { text: page.ctx.t("tune.tone"); foreground: page.ctx.fg; fontFamily: page.ctx.fontFamily }
 

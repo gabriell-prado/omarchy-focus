@@ -11,7 +11,7 @@ import "ui"
 //
 // Bar:   left click opens the panel, right click starts/pauses, middle click
 //        turns the focus sound on or off.
-// Panel: Space/Enter start/pause, r reset, s skip, n sound, 1-4 or ←/→ pages.
+// Panel: Space/Enter start/pause, r reset, s skip, n sound, 1-5 or ←/→ pages.
 Panel {
   id: root
   moduleName: Model.PLUGIN_ID
@@ -86,7 +86,7 @@ Panel {
   // ---------------------------------------------------------------- pages
 
   property string page: "timer"
-  readonly property var pages: ["timer", "sound", "tune", "alerts"]
+  readonly property var pages: ["timer", "sound", "noise", "tone", "alerts"]
   function cyclePage(delta) {
     var i = pages.indexOf(page)
     page = pages[(i + delta + pages.length) % pages.length]
@@ -138,7 +138,7 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: panel.loadedContent
-    contentWidth: panel.fittedContentWidth(Style.space(400))
+    contentWidth: panel.fittedContentWidth(Style.space(460))
     contentHeight: panel.fittedContentHeight(panel.loadedContentHeight)
 
     content: PanelKeyCatcher {
@@ -159,7 +159,7 @@ Panel {
         if (text === "r") root.svc.reset()
         else if (text === "s") root.svc.skip()
         else if (text === "n") root.svc.setSoundEnabled(!root.cfg.soundEnabled)
-        else if (text >= "1" && text <= "4") root.page = root.pages[Number(text) - 1]
+        else if (text >= "1" && text <= "5") root.page = root.pages[Number(text) - 1]
       }
 
       Flickable {
@@ -353,7 +353,8 @@ Panel {
             options: [
               { value: "timer", label: uiCtx.t("tab.timer"), icon: Model.GLYPH.timer },
               { value: "sound", label: uiCtx.t("tab.sound"), icon: Model.GLYPH.headphones },
-              { value: "tune", label: uiCtx.t("tab.tune"), icon: Model.GLYPH.tune },
+              { value: "noise", label: uiCtx.t("tab.noise"), icon: Model.GLYPH.wave },
+              { value: "tone", label: uiCtx.t("tab.tone"), icon: Model.GLYPH.sine },
               { value: "alerts", label: uiCtx.t("tab.alerts"), icon: Model.GLYPH.bell }
             ]
             value: root.page
@@ -362,7 +363,8 @@ Panel {
 
           TimerPage { ctx: uiCtx; visible: root.online && root.page === "timer" }
           SoundPage { ctx: uiCtx; visible: root.online && root.page === "sound" }
-          TunePage { ctx: uiCtx; visible: root.online && root.page === "tune" }
+          NoisePage { ctx: uiCtx; visible: root.online && root.page === "noise" }
+          TonePage { ctx: uiCtx; visible: root.online && root.page === "tone" }
           AlertsPage {
             id: alertsPage
             ctx: uiCtx

@@ -1,7 +1,7 @@
 use focus::audio::engine::{Mixer, BLOCK_FRAMES};
 use focus::audio::{alerts, linear_gain, wav, Mix, SAMPLE_RATE};
 use focus::paths::Paths;
-use focus::settings::{NoiseColor, Settings, NOISE_BANDS};
+use focus::settings::{NoiseColor, Settings, TapeSpeed, NOISE_BANDS};
 use focus::timer::format_clock;
 use focus::{daemon, presets};
 use serde_json::{json, Value};
@@ -25,7 +25,8 @@ Usage:
   omarchy-focus status [--full]              JSON summary (or the full state)
   omarchy-focus daemon                       run the engine (systemd does this)
   omarchy-focus render (--preset <id> | --noise <color> | --alert <id>)
-                       [--bands l1,...,l10] [--seconds N] --out <file.wav>
+                       [--bands l1,...,l10] [--width 0-100] [--softness 0-100]
+                       [--tape off|30|15|7.5|3.75] [--seconds N] --out <file.wav>
                                              offline render, for checks";
 
 fn main() -> ExitCode {
@@ -147,6 +148,7 @@ fn render(args: &[String]) -> Result<(), String> {
     let mut mix = None;
     let mut alert = None;
     let mut bands = [100f32; NOISE_BANDS];
+    let mut treatment = focus::audio::Treatment::default();
     let mut i = 0;
     while i < args.len() {
         let value = args.get(i + 1).cloned().ok_or_else(|| format!("{} needs a value", args[i]))?;
@@ -165,6 +167,9 @@ fn render(args: &[String]) -> Result<(), String> {
                 mix = Some(Mix { noise: Some(color), noise_gain: 1.0, ..Mix::default() });
             }
             "--alert" => alert = Some(value),
+            "--width" => treatment.width = value.parse::<f32>().map_err(|_| "bad --width")?.clamp(0.0, 100.0) / 100.0,
+            "--softness" => treatment.softness = value.parse::<f32>().map_err(|_| "bad --softness")?.clamp(0.0, 100.0) / 100.0,
+            "--tape" => treatment.tape = TapeSpeed::parse(&value).ok_or("bad --tape")?,
             "--bands" => {
                 let levels: Vec<f32> = value.split(',').filter_map(|v| v.trim().parse().ok()).collect();
                 bands = levels.try_into().map_err(|_| format!("--bands needs {NOISE_BANDS} comma-separated levels"))?;
@@ -177,6 +182,7 @@ fn render(args: &[String]) -> Result<(), String> {
     let mut mixer = Mixer::new();
     if let Some(mut m) = mix {
         m.noise_bands = bands;
+        m.treatment = treatment;
         mixer.set_mix(&m);
     }
     if let Some(id) = alert {

@@ -3,7 +3,8 @@
 //! both and keeps the noise from correlating with a binaural tone. Every
 //! color is scaled to the same loudness.
 
-use super::{ms_to_samples, Ramp, SAMPLE_RATE_F};
+use super::treatment::Chain;
+use super::{ms_to_samples, Ramp, Treatment, SAMPLE_RATE_F};
 use crate::settings::{NoiseColor, NOISE_BANDS};
 use std::sync::OnceLock;
 
@@ -71,7 +72,7 @@ impl Channel {
 /// for the stereo pair (measured with ffmpeg's ebur128), the same level the
 /// ffmpeg version played. K-weighting lifts highs, so bright white noise
 /// needs a lower RMS than dark brown to sound as loud.
-fn target_rms_db(color: NoiseColor) -> f32 {
+pub(crate) fn target_rms_db(color: NoiseColor) -> f32 {
     match color {
         NoiseColor::White => -19.2,
         NoiseColor::Pink | NoiseColor::Custom => -15.6,
@@ -119,32 +120,42 @@ pub struct Noise {
     scale: f32,
     /// Only for `NoiseColor::Custom`.
     eq: Option<Equalizer>,
+    /// Width, softness and tape, after the generator.
+    chain: Chain,
 }
 
 impl Noise {
     /// `bands` (0–100 per octave) only matter for `NoiseColor::Custom`.
-    pub fn new(color: NoiseColor, seed: u64, bands: &[f32; NOISE_BANDS]) -> Noise {
+    pub fn new(color: NoiseColor, seed: u64, bands: &[f32; NOISE_BANDS], treatment: Treatment) -> Noise {
         Noise {
             color,
             left: Channel::new(color, seed.wrapping_mul(0x9E37_79B9).wrapping_add(11)),
             right: Channel::new(color, seed.wrapping_mul(0x85EB_CA6B).wrapping_add(29)),
             scale: scale_for(color),
             eq: (color == NoiseColor::Custom).then(|| Equalizer::new(bands, seed)),
+            chain: Chain::new(treatment, color, bands),
         }
     }
 
     pub fn set_bands(&mut self, bands: &[f32; NOISE_BANDS]) {
         if let Some(eq) = self.eq.as_mut() {
             eq.set_bands(bands);
+            // The treatment's loudness correction depends on the shape.
+            self.chain.set_source(self.color, bands);
         }
+    }
+
+    pub fn set_treatment(&mut self, treatment: Treatment) {
+        self.chain.set(treatment);
     }
 
     #[inline]
     pub fn sample(&mut self) -> (f32, f32) {
-        match self.eq.as_mut() {
+        let (l, r) = match self.eq.as_mut() {
             Some(eq) => eq.sample(self.scale),
             None => (self.left.next() * self.scale, self.right.next() * self.scale),
-        }
+        };
+        self.chain.process(l, r)
     }
 }
 
@@ -198,16 +209,16 @@ pub fn shape_for(color: NoiseColor) -> Option<[u32; NOISE_BANDS]> {
 }
 
 #[derive(Clone, Copy, Default)]
-struct Coef {
-    b0: f64,
-    b1: f64,
-    b2: f64,
-    a1: f64,
-    a2: f64,
+pub(crate) struct Coef {
+    pub(crate) b0: f64,
+    pub(crate) b1: f64,
+    pub(crate) b2: f64,
+    pub(crate) a1: f64,
+    pub(crate) a2: f64,
 }
 
 /// RBJ cookbook low- or high-pass section.
-fn pass(high: bool, fc: f64, q: f64) -> Coef {
+pub(crate) fn pass(high: bool, fc: f64, q: f64) -> Coef {
     let w0 = std::f64::consts::TAU * fc / SAMPLE_RATE_F;
     let (sin, cos) = w0.sin_cos();
     let alpha = sin / (2.0 * q);
@@ -217,7 +228,7 @@ fn pass(high: bool, fc: f64, q: f64) -> Coef {
 }
 
 /// |H(e^jw)|² of a section, given cos/sin of w and 2w.
-fn magnitude2(c: &Coef, (cw, sw, c2w, s2w): (f64, f64, f64, f64)) -> f64 {
+pub(crate) fn magnitude2(c: &Coef, (cw, sw, c2w, s2w): (f64, f64, f64, f64)) -> f64 {
     let (nr, ni) = (c.b0 + c.b1 * cw + c.b2 * c2w, -(c.b1 * sw + c.b2 * s2w));
     let (dr, di) = (1.0 + c.a1 * cw + c.a2 * c2w, -(c.a1 * sw + c.a2 * s2w));
     (nr * nr + ni * ni) / (dr * dr + di * di)
@@ -225,7 +236,7 @@ fn magnitude2(c: &Coef, (cw, sw, c2w, s2w): (f64, f64, f64, f64)) -> f64 {
 
 /// ITU-R BS.1770 K-weighting at 48 kHz (high shelf, then RLB high-pass):
 /// how loudness meters, and roughly ears, weigh frequencies.
-const K_WEIGHTING: [Coef; 2] = [
+pub(crate) const K_WEIGHTING: [Coef; 2] = [
     Coef { b0: 1.535_124_859_586_97, b1: -2.691_696_189_406_38, b2: 1.198_392_810_852_85, a1: -1.690_659_293_182_41, a2: 0.732_480_774_215_85 },
     Coef { b0: 1.0, b1: -2.0, b2: 1.0, a1: -1.990_047_454_833_98, a2: 0.990_072_250_366_21 },
 ];
@@ -277,16 +288,26 @@ fn bank() -> &'static Bank {
     })
 }
 
+/// Power response of the custom noise's band mix at one frequency (cos/sin
+/// of w and 2w), relative to pink: Σ gain² × band response.
+pub(crate) fn custom_power(gains: &[f32; NOISE_BANDS], p: (f64, f64, f64, f64)) -> f64 {
+    gains
+        .iter()
+        .zip(&bank().sections)
+        .map(|(g, (coefs, n))| (*g as f64).powi(2) * coefs[..*n].iter().map(|c| magnitude2(c, p)).product::<f64>())
+        .sum()
+}
+
 /// Transposed direct form II state.
 #[derive(Clone, Copy, Default)]
-struct State {
+pub(crate) struct State {
     z1: f64,
     z2: f64,
 }
 
 impl State {
     #[inline]
-    fn run(&mut self, c: &Coef, x: f64) -> f64 {
+    pub(crate) fn run(&mut self, c: &Coef, x: f64) -> f64 {
         let y = c.b0 * x + self.z1;
         self.z1 = c.b1 * x - c.a1 * y + self.z2;
         self.z2 = c.b2 * x - c.a2 * y;
@@ -310,7 +331,7 @@ pub struct Equalizer {
 /// Gains for a slider shape, relative to its loudest band, and the makeup
 /// that keeps the mix as loud (K-weighted) as all bands at once, which is
 /// pink minus the inaudible rumble below 20 Hz: equal sliders get exactly 1.
-fn gains_for(levels: &[f32; NOISE_BANDS]) -> ([f32; NOISE_BANDS], f32) {
+pub(crate) fn gains_for(levels: &[f32; NOISE_BANDS]) -> ([f32; NOISE_BANDS], f32) {
     let max = levels.iter().cloned().fold(0.0f32, f32::max);
     if max <= 0.0 {
         return ([0.0; NOISE_BANDS], 0.0);
@@ -403,7 +424,7 @@ mod tests {
 
     /// Raw RMS (dBFS), what the color calibration targets.
     fn rms_db(color: NoiseColor) -> f32 {
-        let mut n = Noise::new(color, 7, &FLAT);
+        let mut n = Noise::new(color, 7, &FLAT, Treatment::default());
         for _ in 0..48_000 {
             n.sample();
         }
@@ -413,19 +434,19 @@ mod tests {
     }
 
     fn shaped(bands: [u32; NOISE_BANDS]) -> (f32, f64) {
-        measure(&mut Noise::new(NoiseColor::Custom, 7, &bands.map(|b| b as f32)))
+        measure(&mut Noise::new(NoiseColor::Custom, 7, &bands.map(|b| b as f32), Treatment::default()))
     }
 
     #[test]
     fn flat_custom_is_pink() {
         let (custom, _) = shaped([100; NOISE_BANDS]);
-        let pink = measure(&mut Noise::new(NoiseColor::Pink, 7, &FLAT)).0;
+        let pink = measure(&mut Noise::new(NoiseColor::Pink, 7, &FLAT, Treatment::default())).0;
         assert!((custom - pink).abs() < 0.3, "custom {custom} dB vs pink {pink} dB");
     }
 
     #[test]
     fn shaping_changes_the_color_not_the_loudness() {
-        let target = measure(&mut Noise::new(NoiseColor::Pink, 7, &FLAT)).0;
+        let target = measure(&mut Noise::new(NoiseColor::Pink, 7, &FLAT, Treatment::default())).0;
         let (_, pink_rate) = shaped([100; NOISE_BANDS]);
         let shapes = [
             shape_for(NoiseColor::White).unwrap(),
@@ -462,7 +483,7 @@ mod tests {
         // A click is a jump bigger than the noise makes on its own: compare
         // the largest sample step while the shape changes with the largest in
         // steady sound before and after.
-        let mut n = Noise::new(NoiseColor::Custom, 3, &FLAT);
+        let mut n = Noise::new(NoiseColor::Custom, 3, &FLAT, Treatment::default());
         let steps: Vec<f32> = {
             let mut prev = n.sample().0;
             (0..144_000)
@@ -493,7 +514,7 @@ mod tests {
 
     #[test]
     fn channels_are_independent() {
-        let mut n = Noise::new(NoiseColor::Pink, 3, &FLAT);
+        let mut n = Noise::new(NoiseColor::Pink, 3, &FLAT, Treatment::default());
         let (mut lr, mut ll, mut rr) = (0f64, 0f64, 0f64);
         for _ in 0..200_000 {
             let (l, r) = n.sample();

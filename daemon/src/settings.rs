@@ -29,6 +29,29 @@ pub enum BeatMode {
     Isochronic,
 }
 
+/// Tape-machine character for the noise, by tape speed in inches per second.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TapeSpeed {
+    #[serde(rename = "off")]
+    Off,
+    #[serde(rename = "30")]
+    Ips30,
+    #[serde(rename = "15")]
+    Ips15,
+    #[serde(rename = "7.5")]
+    Ips7_5,
+    #[serde(rename = "3.75")]
+    Ips3_75,
+}
+
+pub const TAPE_SPEEDS: [TapeSpeed; 5] = [TapeSpeed::Off, TapeSpeed::Ips30, TapeSpeed::Ips15, TapeSpeed::Ips7_5, TapeSpeed::Ips3_75];
+
+impl TapeSpeed {
+    pub fn parse(s: &str) -> Option<TapeSpeed> {
+        serde_json::from_value(Value::String(s.to_string())).ok()
+    }
+}
+
 pub const NOISE_COLORS: [NoiseColor; 5] =
     [NoiseColor::Off, NoiseColor::White, NoiseColor::Pink, NoiseColor::Brown, NoiseColor::Custom];
 
@@ -64,6 +87,11 @@ pub struct Settings {
     pub noise_volume: u32,
     /// Level of each octave band of the custom noise, 0–100; all equal is pink.
     pub noise_bands: [u32; NOISE_BANDS],
+    /// 0 = mono, 100 = each ear its own noise.
+    pub noise_width: u32,
+    /// 0 = untouched, 100 = highs rolled off from 2 kHz.
+    pub noise_softness: u32,
+    pub tape_speed: TapeSpeed,
     pub beat_mode: BeatMode,
     pub beat_hz: u32,
     pub carrier_hz: u32,
@@ -91,6 +119,9 @@ impl Default for Settings {
             noise_color: NoiseColor::Pink,
             noise_volume: 50,
             noise_bands: [100; NOISE_BANDS],
+            noise_width: 100,
+            noise_softness: 0,
+            tape_speed: TapeSpeed::Off,
             beat_mode: BeatMode::Off,
             beat_hz: 16,
             carrier_hz: 250,
@@ -112,6 +143,8 @@ pub const INT_LIMITS: &[(&str, u32, u32)] = &[
     ("longBreakMinutes", 1, 90),
     ("sessionsBeforeLongBreak", 1, 12),
     ("noiseVolume", 0, 100),
+    ("noiseWidth", 0, 100),
+    ("noiseSoftness", 0, 100),
     ("beatHz", 1, 45),
     ("carrierHz", 100, 600),
     ("toneVolume", 0, 100),
@@ -246,6 +279,7 @@ fn coerce(key: &str, value: &Value, default: &Value, strict: bool) -> Option<Val
             match key {
                 "noiseColor" => NoiseColor::parse(s).map(|_| Value::from(s)),
                 "beatMode" => BeatMode::parse(s).map(|_| Value::from(s)),
+                "tapeSpeed" => TapeSpeed::parse(s).map(|_| Value::from(s)),
                 "focusEndSound" | "breakEndSound" => ALERT_IDS.contains(&s).then(|| Value::from(s)),
                 _ => Some(Value::from(s.chars().take(1024).collect::<String>())),
             }
@@ -292,6 +326,16 @@ mod tests {
         assert!(d.patched(json!({"noiseColor": "purple"}).as_object().unwrap()).is_err());
         assert!(d.patched(json!({"autoStartBreaks": "maybe"}).as_object().unwrap()).is_err());
         assert_eq!(d.patched(json!({"focusMinutes": 500}).as_object().unwrap()).unwrap().focus_minutes, 180);
+    }
+
+    #[test]
+    fn texture_settings() {
+        let d = Settings::default();
+        assert_eq!((d.noise_width, d.noise_softness, d.tape_speed), (100, 0, TapeSpeed::Off), "defaults change nothing");
+        let s = d.patched(json!({"noiseWidth": 30, "noiseSoftness": 250, "tapeSpeed": "7.5"}).as_object().unwrap()).unwrap();
+        assert_eq!((s.noise_width, s.noise_softness, s.tape_speed), (30, 100, TapeSpeed::Ips7_5));
+        assert!(d.patched(json!({"tapeSpeed": "45"}).as_object().unwrap()).is_err());
+        assert!(d.patched(json!({"tapeSpeed": 15}).as_object().unwrap()).is_err(), "speeds are named strings");
     }
 
     #[test]

@@ -94,8 +94,9 @@ impl Mixer {
             (Some(i), Some(color)) if self.noise[i].noise.color == color => {
                 let v = &mut self.noise[i];
                 v.gain.set(mix.noise_gain, ms_to_samples(GAIN_MS));
-                // A reshaped custom noise keeps its generator; the bands glide.
+                // A reshaped or re-treated noise keeps its generator; changes glide.
                 v.noise.set_bands(&mix.noise_bands);
+                v.noise.set_treatment(mix.treatment);
             }
             (live, wanted) => {
                 if let Some(i) = live {
@@ -107,7 +108,7 @@ impl Mixer {
                     self.seed = self.seed.wrapping_add(1);
                     let mut gain = Ramp::new(0.0);
                     gain.set(mix.noise_gain, ms_to_samples(XFADE_MS));
-                    self.noise.push(NoiseVoice { noise: Noise::new(color, self.seed, &mix.noise_bands), gain, retiring: false });
+                    self.noise.push(NoiseVoice { noise: Noise::new(color, self.seed, &mix.noise_bands, mix.treatment), gain, retiring: false });
                 }
             }
         }
