@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "local.focus",
+  "name": "Focus",
+  "version": "1.0.0",
+  "author": "local",
+  "license": "MIT",
+  "description": "Pomodoro timer with research-based focus sounds (white, pink and brown noise, binaural and isochronic beats) and selectable alert sounds.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Focus",
+    "description": "Pomodoro timer and focus sounds. Click for options, right-click to start or pause, middle-click to toggle the sound.",
+    "category": "Productivity",
+    "allowMultiple": false,
+    "defaultSection": "centerBegin",
+    "defaults": {},
+    "schema": [
+      { "key": "focusMinutes", "type": "integer", "label": "Focus (minutes)", "min": 1, "max": 180, "step": 1, "defaultValue": 25 },
+      { "key": "shortBreakMinutes", "type": "integer", "label": "Short break (minutes)", "min": 1, "max": 60, "step": 1, "defaultValue": 5 },
+      { "key": "longBreakMinutes", "type": "integer", "label": "Long break (minutes)", "min": 1, "max": 90, "step": 1, "defaultValue": 15 },
+      { "key": "sessionsBeforeLongBreak", "type": "integer", "label": "Sessions before a long break", "min": 1, "max": 12, "step": 1, "defaultValue": 4 },
+      { "key": "autoStartBreaks", "type": "boolean", "label": "Start breaks automatically", "defaultValue": true },
+      { "key": "autoStartFocus", "type": "boolean", "label": "Start focus sessions automatically", "defaultValue": false },
+      { "key": "soundEnabled", "type": "boolean", "label": "Focus sound", "defaultValue": false },
+      { "key": "soundOnlyDuringFocus", "type": "boolean", "label": "Play the sound only during focus sessions", "defaultValue": true },
+      { "key": "noiseColor", "type": "enum", "label": "Noise color", "options": ["off", "white", "pink", "brown"], "defaultValue": "pink" },
+      { "key": "noiseVolume", "type": "integer", "label": "Noise volume (%)", "min": 0, "max": 100, "step": 5, "defaultValue": 50 },
+      { "key": "beatMode", "type": "enum", "label": "Brainwave tone", "options": ["off", "binaural", "isochronic"], "defaultValue": "off" },
+      { "key": "beatHz", "type": "integer", "label": "Beat frequency (Hz)", "min": 1, "max": 45, "step": 1, "defaultValue": 16 },
+      { "key": "carrierHz", "type": "integer", "label": "Carrier tone (Hz)", "min": 100, "max": 600, "step": 10, "defaultValue": 250 },
+      { "key": "toneVolume", "type": "integer", "label": "Tone volume (%)", "min": 0, "max": 100, "step": 5, "defaultValue": 35 },
+      { "key": "focusEndSound", "type": "enum", "label": "Sound when focus ends", "options": ["none", "chime", "bowl", "beep", "rise", "complete", "bell", "message", "alarm", "attention", "login", "phone", "custom"], "defaultValue": "bowl" },
+      { "key": "breakEndSound", "type": "enum", "label": "Sound when a break ends", "options": ["none", "chime", "bowl", "beep", "rise", "complete", "bell", "message", "alarm", "attention", "login", "phone", "custom"], "defaultValue": "chime" },
+      { "key": "alertVolume", "type": "integer", "label": "Alert volume (%)", "min": 0, "max": 100, "step": 5, "defaultValue": 70 },
+      { "key": "customSoundPath", "type": "path", "label": "Custom alert sound file", "defaultValue": "" },
+      { "key": "desktopNotifications", "type": "boolean", "label": "Desktop notifications", "defaultValue": true },
+      { "key": "showTimeInBar", "type": "boolean", "label": "Show the time in the bar", "defaultValue": true }
+    ]
+  }
+}
