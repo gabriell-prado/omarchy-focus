@@ -1,0 +1,4 @@
+# Builds normally go to ~/.cache/omarchy-focus (see Makefile); this catches a
+# plain `cargo build` run inside daemon/.
+/daemon/target/
+*.wav

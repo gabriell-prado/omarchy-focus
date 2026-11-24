@@ -1,0 +1,14 @@
+[Unit]
+Description=Omarchy Focus: Pomodoro timer and focus sounds
+Documentation=https://github.com/gabriell-prado/omarchy-focus
+After=graphical-session.target pipewire.service pipewire-pulse.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/omarchy-focus daemon
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
