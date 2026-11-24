@@ -123,8 +123,9 @@ Column {
     ctx: page.ctx
     visible: page.cfg.noiseColor !== "off"
     label: page.ctx.t("sound.noiseVolume")
+    live: true
     value: page.cfg.noiseVolume || 0
-    minimum: 0; maximum: 100; step: 5
+    minimum: 0; maximum: 100
     format: function(v) { return page.ctx.percent(v) }
     onCommitted: function(v) { page.svc.chooseSound({ noiseVolume: v }) }
   }
@@ -132,8 +133,9 @@ Column {
     ctx: page.ctx
     visible: page.cfg.beatMode !== "off"
     label: page.ctx.t("sound.toneVolume")
+    live: true
     value: page.cfg.toneVolume || 0
-    minimum: 0; maximum: 100; step: 5
+    minimum: 0; maximum: 100
     format: function(v) { return page.ctx.percent(v) }
     onCommitted: function(v) { page.svc.chooseSound({ toneVolume: v }) }
   }

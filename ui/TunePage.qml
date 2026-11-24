@@ -40,6 +40,7 @@ Column {
     ctx: page.ctx
     visible: page.cfg.beatMode !== "off"
     label: page.ctx.t("tune.beat")
+    live: true
     value: page.cfg.beatHz || 16
     minimum: 1; maximum: 45
     format: function(v) {
@@ -52,6 +53,7 @@ Column {
     ctx: page.ctx
     visible: page.cfg.beatMode !== "off"
     label: page.ctx.t("tune.carrier")
+    live: true
     value: page.cfg.carrierHz || 250
     minimum: 100; maximum: 600; step: 10
     format: function(v) { return page.ctx.hz(v) }

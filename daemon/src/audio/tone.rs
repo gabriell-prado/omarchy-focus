@@ -7,7 +7,10 @@ use std::f64::consts::TAU;
 
 /// Peak amplitude of a tone before its volume.
 pub const TONE_AMPLITUDE: f64 = 0.25;
-const GLIDE_SAMPLES: u32 = 14_400; // 300 ms
+/// Frequency changes glide over 80 ms, like volume changes: short enough
+/// that a dragged slider is heard following the hand; the phase stays
+/// continuous, so even an instant jump would not click.
+const GLIDE_SAMPLES: u32 = 3_840;
 
 #[derive(Clone, Copy)]
 struct Glide {

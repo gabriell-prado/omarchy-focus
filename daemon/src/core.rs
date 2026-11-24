@@ -21,9 +21,14 @@ use std::io::Write;
 use std::os::unix::net::UnixStream;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 pub type Writer = Arc<Mutex<UnixStream>>;
+
+/// config.toml is written at most this often. A slider dragged in the panel
+/// changes settings many times a second; the sound follows every change at
+/// once, the file only catches up.
+const SAVE_INTERVAL: Duration = Duration::from_millis(300);
 
 pub enum Msg {
     Request { client: u64, cmd: Command, reply: Sender<Value> },
@@ -83,6 +88,8 @@ pub struct Core {
     last_state: String,
     config_mtime: Option<SystemTime>,
     last_config_check: Instant,
+    last_save: Option<Instant>,
+    save_pending: bool,
 }
 
 impl Core {
@@ -103,6 +110,8 @@ impl Core {
             last_state: String::new(),
             config_mtime,
             last_config_check: Instant::now(),
+            last_save: None,
+            save_pending: false,
         }
     }
 
@@ -124,6 +133,9 @@ impl Core {
             Msg::Tick => {
                 if let Some(t) = self.timer.tick(now_ms(), &self.settings, &today()) {
                     self.announce(t);
+                }
+                if self.save_pending && self.last_save.is_none_or(|t| t.elapsed() >= SAVE_INTERVAL) {
+                    self.save_settings();
                 }
                 if self.last_config_check.elapsed().as_millis() >= 1000 {
                     self.last_config_check = Instant::now();
@@ -204,14 +216,28 @@ impl Core {
             return;
         }
         self.settings = s;
+        if self.last_save.is_none_or(|t| t.elapsed() >= SAVE_INTERVAL) {
+            self.save_settings();
+        } else {
+            // The next tick writes it, once the interval has passed.
+            self.save_pending = true;
+        }
+    }
+
+    fn save_settings(&mut self) {
         if let Err(e) = self.settings.save(&self.paths.config) {
             eprintln!("omarchy-focus: cannot save {}: {e}", self.paths.config.display());
         }
         self.config_mtime = fs::metadata(&self.paths.config).and_then(|m| m.modified()).ok();
+        self.last_save = Some(Instant::now());
+        self.save_pending = false;
     }
 
     /// Pick up hand edits of config.toml.
     fn reload_config_if_edited(&mut self) {
+        if self.save_pending {
+            return; // what is in memory is newer than the file
+        }
         let mtime = fs::metadata(&self.paths.config).and_then(|m| m.modified()).ok();
         if mtime == self.config_mtime {
             return;

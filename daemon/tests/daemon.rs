@@ -113,8 +113,8 @@ fn settings_presets_and_errors() {
     let s = d.status();
     assert_eq!((s["soundPreset"].as_str(), s["settings"]["soundEnabled"].as_bool()), (Some("beta"), Some(true)));
 
-    let toml = std::fs::read_to_string(d.root.join("config/omarchy-focus/config.toml")).unwrap();
-    assert!(toml.contains("beatMode = \"binaural\""), "{toml}");
+    let config = d.root.join("config/omarchy-focus/config.toml");
+    wait_for(|| std::fs::read_to_string(&config).unwrap_or_default().contains("beatMode = \"binaural\""), "config.toml to be written");
 
     let bad = d.cli(&["set", "noiseColor", "purple"]);
     assert!(!bad.status.success());
@@ -186,4 +186,23 @@ fn second_daemon_refuses_to_start() {
     let out = Command::new(BIN).arg("daemon").envs(env(&d.root)).output().unwrap();
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("already running"));
+}
+
+#[test]
+fn a_dragged_slider_applies_every_step_and_saves_the_last() {
+    let d = Daemon::start("drag", |_| {});
+    let config = d.root.join("config/omarchy-focus/config.toml");
+    // One connection, many changes back to back, as a slider drag sends them.
+    let mut sock = UnixStream::connect(d.socket()).unwrap();
+    let mut reader = BufReader::new(sock.try_clone().unwrap());
+    let mut line = String::new();
+    for v in (5..=95).step_by(5) {
+        writeln!(sock, r#"{{"cmd":"set","patch":{{"noiseVolume":{v}}}}}"#).unwrap();
+        line.clear();
+        reader.read_line(&mut line).unwrap();
+        assert!(line.contains("\"ok\":true"), "{line}");
+        // The engine's state follows each step immediately.
+        assert_eq!(d.status()["settings"]["noiseVolume"], v);
+    }
+    wait_for(|| std::fs::read_to_string(&config).unwrap_or_default().contains("noiseVolume = 95"), "the final value on disk");
 }

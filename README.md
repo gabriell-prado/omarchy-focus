@@ -29,7 +29,8 @@ is the **Focus engine**, a small Rust daemon:
 - The timer and the sound keep running through shell restarts and plugin
   reloads. A daemon restart resumes the session from its state file.
 - Audio is synthesised in-process and played as one PulseAudio/PipeWire
-  stream, **Focus**. Volume changes ramp in 80 ms, a different sound
+  stream, **Focus**. The volume and tone sliders are heard while you drag
+  them: volume and frequency changes ramp in 80 ms, a different sound
   crossfades over 400 ms, stopping fades out, and only one alert plays at a
   time. Nothing is restarted and nothing clicks.
 - One source of truth for settings (`~/.config/omarchy-focus/config.toml`),

@@ -2,7 +2,9 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 
-// Label and live value above a slider; reports the value once, on release.
+// Label and live value above a slider. Reports the value once, on release;
+// with `live`, also every time the knob reaches a new step while dragging, so
+// what it controls (a volume, a tone) follows the hand.
 Column {
   id: row
 
@@ -13,8 +15,16 @@ Column {
   property real maximum: 100
   property real step: 1
   property int tickCount: 0
+  property bool live: false
   property var format: function(v) { return String(Math.round(v)) }
   signal committed(int value)
+
+  // The last value sent during this drag, so each step is sent once.
+  property real _sent: NaN
+
+  function snap(v) {
+    return Math.max(minimum, Math.min(maximum, Math.round(v / step) * step))
+  }
 
   width: parent ? parent.width : 0
   spacing: Style.space(2)
@@ -58,9 +68,19 @@ Column {
     step: row.step
     integer: true
     tickCount: row.tickCount
+    onMoved: function(v) {
+      if (!row.live) return
+      var snapped = row.snap(v)
+      var last = isNaN(row._sent) ? row.value : row._sent
+      if (snapped === last) return
+      row._sent = snapped
+      row.committed(snapped)
+    }
     onReleased: function(v) {
-      var snapped = Math.round(v / row.step) * row.step
-      if (snapped !== row.value) row.committed(snapped)
+      var snapped = row.snap(v)
+      var last = isNaN(row._sent) ? row.value : row._sent
+      row._sent = NaN
+      if (snapped !== last) row.committed(snapped)
     }
   }
 }
