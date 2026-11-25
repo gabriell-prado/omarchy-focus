@@ -128,6 +128,49 @@ Item {
   // One alert at a time: the engine cuts off any alert still sounding.
   function previewAlert(id) { send({ cmd: "alert", id: id }) }
 
+  // ---------------------------------------------------------------- Do Not Disturb
+  //
+  // Omarchy's notification service keeps its Do Not Disturb switch in
+  // quiet.json ({"dnd": true|false}). While it is on, Focus notifications reach
+  // the service but stay off the screen, so the Alerts page warns about it.
+
+  property bool doNotDisturb: false
+
+  FileView {
+    id: quietFile
+    path: (Quickshell.env("HOME") || "") + "/.local/state/omarchy/notifications/quiet.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.doNotDisturb = root.parseQuiet(text())
+    onLoadFailed: root.doNotDisturb = false
+  }
+
+  function parseQuiet(raw) {
+    try {
+      var quiet = JSON.parse(raw)
+      return !!(quiet && quiet.dnd === true)
+    } catch (e) {
+      return false
+    }
+  }
+
+  function refreshDoNotDisturb() { quietFile.reload() }
+
+  // Through Omarchy's own toggle, which also updates the bar's indicator.
+  function turnOffDoNotDisturb() {
+    if (!doNotDisturb) return
+    Quickshell.execDetached(["omarchy-toggle-notification-silencing"])
+    dndRecheck.restart()
+  }
+
+  // The service saves quiet.json a moment after the switch; read it again.
+  Timer {
+    id: dndRecheck
+    interval: 600
+    onTriggered: root.refreshDoNotDisturb()
+  }
+
   function startEngine() {
     Quickshell.execDetached(["systemctl", "--user", "start", "omarchy-focus.service"])
   }

@@ -118,6 +118,8 @@
   "alerts.customPath": "Custom sound file",
   "alerts.customPlaceholder": "~/Music/bell.ogg",
   "alerts.notify": "Desktop notification",
+  "alerts.dnd.warning": "Notifications are silenced (Do Not Disturb): the alert still sounds, but the notification won't pop up.",
+  "alerts.dnd.off": "Stop silencing notifications",
   "timer.barDisplay": "Show in the bar",
   "barDisplay.none": "Icon",
   "barDisplay.time": "Time",

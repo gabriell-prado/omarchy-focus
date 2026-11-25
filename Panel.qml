@@ -82,8 +82,13 @@ Panel {
   onSettingsChanged: clearLegacySettings()
   onOnlineChanged: clearLegacySettings()
 
-  // An audition lasts while the panel is open.
-  onOpenedChanged: if (!opened && svc) svc.endAudition()
+  // An audition lasts while the panel is open; Do Not Disturb is re-read when
+  // it opens, in case the file watch missed a change.
+  onOpenedChanged: {
+    if (!svc) return
+    if (opened) svc.refreshDoNotDisturb()
+    else svc.endAudition()
+  }
 
   // ---------------------------------------------------------------- pages
 

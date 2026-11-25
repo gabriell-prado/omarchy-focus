@@ -20,7 +20,8 @@ var GLYPH = {
   sine: "󰭌",
   left: "󰅁",
   right: "󰅂",
-  power: "󰐥"
+  power: "󰐥",
+  bellOff: "󰂛"
 }
 
 function isBreak(phase) {

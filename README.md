@@ -124,7 +124,8 @@ which a binaural beat needs exactly as generated.
 - **Alerts**: separate sounds for *focus ends* and *break ends* (4 synthesised
   tones, 7 freedesktop sounds, or a custom file). The arrows choose and play
   the previous/next sound; clicking the name plays it again. Also volume,
-  desktop notifications.
+  desktop notifications (with a warning, and a button to switch it off, while
+  Omarchy's Do Not Disturb keeps them off the screen).
 
 ### Command line
 

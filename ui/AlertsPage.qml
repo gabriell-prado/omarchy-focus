@@ -1,6 +1,8 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
+import "../Model.js" as Model
 
 Column {
   id: page
@@ -80,6 +82,59 @@ Column {
     label: page.ctx.t("alerts.notify")
     checked: !!page.cfg.desktopNotifications
     onToggled: page.svc.update({ desktopNotifications: !page.cfg.desktopNotifications })
+  }
+
+  // Notifications are on here, but Omarchy's Do Not Disturb keeps them off
+  // the screen: say so, and offer to switch it off.
+  Rectangle {
+    id: dndWarning
+    readonly property color warn: Commons.Color.urgent
+    visible: !!(page.svc && page.svc.doNotDisturb && page.cfg.desktopNotifications)
+    width: parent.width
+    implicitHeight: warningColumn.implicitHeight + Style.space(20)
+    radius: Style.cornerRadius > 0 ? Style.space(6) : 0
+    color: Qt.rgba(warn.r, warn.g, warn.b, 0.12)
+    border.width: Math.max(1, Style.space(1))
+    border.color: Qt.rgba(warn.r, warn.g, warn.b, 0.6)
+
+    Column {
+      id: warningColumn
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.margins: Style.space(10)
+      spacing: Style.space(8)
+
+      Row {
+        width: parent.width
+        spacing: Style.space(8)
+
+        Text {
+          id: warningIcon
+          textFormat: Text.PlainText
+          text: Model.GLYPH.bellOff
+          color: dndWarning.warn
+          font.family: page.ctx.fontFamily
+          font.pixelSize: Style.font.title
+        }
+        Text {
+          width: parent.width - warningIcon.width - parent.spacing
+          textFormat: Text.PlainText
+          text: page.ctx.t("alerts.dnd.warning")
+          color: page.ctx.fg
+          wrapMode: Text.WordWrap
+          font.family: page.ctx.fontFamily
+          font.pixelSize: Style.font.bodySmall
+        }
+      }
+
+      PanelButton {
+        ctx: page.ctx
+        width: parent.width
+        text: page.ctx.t("alerts.dnd.off")
+        onClicked: page.svc.turnOffDoNotDisturb()
+      }
+    }
   }
 
   Note { ctx: page.ctx; text: page.ctx.t("alerts.note") }

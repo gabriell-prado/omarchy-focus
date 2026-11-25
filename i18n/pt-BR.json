@@ -118,6 +118,8 @@
   "alerts.customPath": "Arquivo de som personalizado",
   "alerts.customPlaceholder": "~/Música/sino.ogg",
   "alerts.notify": "Notificação na área de trabalho",
+  "alerts.dnd.warning": "As notificações estão silenciadas (Não perturbe): o alerta ainda toca, mas a notificação não aparece na tela.",
+  "alerts.dnd.off": "Parar de silenciar notificações",
   "timer.barDisplay": "Mostrar na barra",
   "barDisplay.none": "Ícone",
   "barDisplay.time": "Tempo",
