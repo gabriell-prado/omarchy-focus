@@ -71,7 +71,9 @@ What the bar shows is chosen on the Timer page: **Icon** (it changes for focus
 󰔛, breaks 󰅶 and pause 󰏤), **Time** (the icon and the time left, the default)
 or **Ring** (while a session runs, the icon becomes a ring in the theme's
 accent color whose border fills clockwise as the session passes; otherwise it
-shows the same icon as Icon).
+shows the same icon as Icon). A phase that is due but not started is shown in
+grey, e.g. a grey cup for a break that has not begun; the pause icon is not
+greyed.
 
 On the Timer page, under Start / Reset / Skip, **−5 · −1 · +1 · +5 min**
 change the session in progress (focus or break, running or paused) without

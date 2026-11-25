@@ -125,7 +125,11 @@ Panel {
     // The status slot, like Elsewhen and Weather beside the clock; the time,
     // when shown, adds its own width plus BarIconButton's label-to-icon gap.
     slotSize: Style.bar.statusSlot + (root.showTime ? Math.ceil(clockMetrics.advanceWidth) + Style.space(4) : 0)
-    foreground: root.online && (root.running || root.phase === "idle") ? root.barFg : Qt.darker(root.barFg, 1.55)
+    // Grey only for a phase that is queued but not started (e.g. a break
+    // that is due) or when the engine is unreachable; running, paused and
+    // idle use the bar's own color.
+    readonly property bool waiting: root.phase !== "idle" && root.fresh && !root.running
+    foreground: root.online && !waiting ? root.barFg : Qt.darker(root.barFg, 1.55)
     tooltipText: root.opened ? "" : root.tooltip
     // Each mouse-wheel notch (120) is a minute; touchpads send smaller steps,
     // which add up to one.
