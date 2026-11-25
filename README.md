@@ -78,7 +78,7 @@ focus (󰔛), breaks (󰅶) and pause (󰏤).
   switches it on; when it follows the timer and no focus session is running,
   the change is previewed until you close the panel.
 - **Noise**: noise color, a ten-band equalizer to shape it by hand, and its
-  texture: softness, stereo width and tape speed.
+  texture: softness and stereo width.
 - **Tone**: the brainwave tone (binaural / isochronic), beat frequency with
   its EEG band, and carrier tone.
 
@@ -97,9 +97,9 @@ drag, gliding over 80 ms.
 
 ### Texture
 
-Three treatments for the noise, also heard while you drag and also kept at
-the same loudness (each is measured to stay within 0.3 LU). They never touch
-the brainwave tone, which a binaural beat needs exactly as generated.
+Two treatments for the noise, also heard while you drag and also kept at the
+same loudness (measured within 0.2 LU). They never touch the brainwave tone,
+which a binaural beat needs exactly as generated.
 
 - **Softness** takes the hiss off the top: a gentle 12 dB/octave low-pass
   whose corner moves from 20 kHz down to 2 kHz, the way air and distance
@@ -109,10 +109,6 @@ the brainwave tone, which a binaural beat needs exactly as generated.
   fully independent noises. It is an equal-power mix, so the correlation
   between the ears becomes 1 − width without any change in loudness; lower
   interaural correlation sounds more spacious and enveloping (Ando 1985).
-- **Tape speed** gives the noise the character of a tape machine at 30, 15,
-  7.5 or 3.75 ips: below a low "head bump" the response falls away, the
-  treble rolls off earlier the slower the tape (20 → 6 kHz), and soft
-  saturation rounds the peaks. Typical tape behaviour, not one machine.
 - **Alerts**: separate sounds for *focus ends* and *break ends* (4 synthesised
   tones, 7 freedesktop sounds, or a custom file). The arrows choose and play
   the previous/next sound; clicking the name plays it again. Also volume,
@@ -154,7 +150,6 @@ start the engine imports the settings the earlier QML-only version kept in
 | `noiseColor` | `pink` | `off` `white` `pink` `brown` `custom` |
 | `noiseBands` | ten × 100 | 0–100 per octave band (31 Hz … 16 kHz), used by `custom` |
 | `noiseSoftness` / `noiseWidth` | 0 / 100 | 0–100 (0 softness and 100 width leave the noise untouched) |
-| `tapeSpeed` | `off` | `off` `30` `15` `7.5` `3.75` (ips) |
 | `noiseVolume` / `toneVolume` | 50 / 35 | 0–100 (square-law curve) |
 | `beatMode` | `off` | `off` `binaural` `isochronic` |
 | `beatHz` / `carrierHz` | 16 / 250 | 1–45 / 100–600 |
@@ -227,8 +222,8 @@ daemon/                       the engine (Rust crate `omarchy-focus`)
   src/core.rs                   owner of state: commands, ticks, broadcasts
   src/timer.rs                  Pomodoro state machine (pure, tested)
   src/settings.rs, presets.rs   typed settings, presets and evidence
-  src/audio/                    noise + equalizer, treatment (width, softness,
-                                tape), tone, alerts, mixer, output
+  src/audio/                    noise + equalizer, treatment (width, softness),
+                                tone, alerts, mixer, output
   tests/daemon.rs               end-to-end tests against the real binary
 systemd/omarchy-focus.service user service
 Makefile                      build · test · install · uninstall
@@ -236,7 +231,7 @@ Makefile                      build · test · install · uninstall
 
 - `omarchy-focus render --preset gamma --seconds 10 --out /tmp/x.wav` renders
   a sound offline (also `--noise <color>`, `--alert <id>`, `--bands`,
-  `--softness`, `--width`, `--tape`), for listening or measuring with
+  `--softness`, `--width`), for listening or measuring with
   `ffmpeg -af ebur128`.
 - After editing QML, run `omarchy restart shell`: the shell's hot reload
   rebuilds the widget but reuses previously compiled code. The engine keeps

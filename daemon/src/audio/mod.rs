@@ -9,7 +9,7 @@ pub mod tone;
 pub mod treatment;
 pub mod wav;
 
-use crate::settings::{BeatMode, NoiseColor, Settings, TapeSpeed, NOISE_BANDS};
+use crate::settings::{BeatMode, NoiseColor, Settings, NOISE_BANDS};
 
 pub const SAMPLE_RATE: u32 = 48_000;
 pub const SAMPLE_RATE_F: f64 = SAMPLE_RATE as f64;
@@ -34,12 +34,11 @@ pub struct Treatment {
     pub width: f32,
     /// 0 = untouched, 1 = highs rolled off from 2 kHz.
     pub softness: f32,
-    pub tape: TapeSpeed,
 }
 
 impl Default for Treatment {
     fn default() -> Self {
-        Treatment { width: 1.0, softness: 0.0, tape: TapeSpeed::Off }
+        Treatment { width: 1.0, softness: 0.0 }
     }
 }
 
@@ -77,7 +76,6 @@ impl Mix {
             treatment: Treatment {
                 width: s.noise_width.min(100) as f32 / 100.0,
                 softness: s.noise_softness.min(100) as f32 / 100.0,
-                tape: s.tape_speed,
             },
             tone,
             tone_gain: if tone.is_some() { linear_gain(s.tone_volume) } else { 0.0 },

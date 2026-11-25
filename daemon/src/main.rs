@@ -1,7 +1,7 @@
 use focus::audio::engine::{Mixer, BLOCK_FRAMES};
 use focus::audio::{alerts, linear_gain, wav, Mix, SAMPLE_RATE};
 use focus::paths::Paths;
-use focus::settings::{NoiseColor, Settings, TapeSpeed, NOISE_BANDS};
+use focus::settings::{NoiseColor, Settings, NOISE_BANDS};
 use focus::timer::format_clock;
 use focus::{daemon, presets};
 use serde_json::{json, Value};
@@ -26,7 +26,7 @@ Usage:
   omarchy-focus daemon                       run the engine (systemd does this)
   omarchy-focus render (--preset <id> | --noise <color> | --alert <id>)
                        [--bands l1,...,l10] [--width 0-100] [--softness 0-100]
-                       [--tape off|30|15|7.5|3.75] [--seconds N] --out <file.wav>
+                       [--seconds N] --out <file.wav>
                                              offline render, for checks";
 
 fn main() -> ExitCode {
@@ -169,7 +169,6 @@ fn render(args: &[String]) -> Result<(), String> {
             "--alert" => alert = Some(value),
             "--width" => treatment.width = value.parse::<f32>().map_err(|_| "bad --width")?.clamp(0.0, 100.0) / 100.0,
             "--softness" => treatment.softness = value.parse::<f32>().map_err(|_| "bad --softness")?.clamp(0.0, 100.0) / 100.0,
-            "--tape" => treatment.tape = TapeSpeed::parse(&value).ok_or("bad --tape")?,
             "--bands" => {
                 let levels: Vec<f32> = value.split(',').filter_map(|v| v.trim().parse().ok()).collect();
                 bands = levels.try_into().map_err(|_| format!("--bands needs {NOISE_BANDS} comma-separated levels"))?;

@@ -52,7 +52,6 @@ holds no domain knowledge of its own.
   "alerts": ["none","chime","bowl","beep","rise","complete","bell","message","alarm","attention","login","phone","custom"],
   "noiseColors": ["off","white","pink","brown","custom"],
   "beatModes": ["off","binaural","isochronic"],
-  "tapeSpeeds": ["off","30","15","7.5","3.75"],
   "bands": [["delta",0],["theta",4],["alpha",8],["beta",13],["gamma",30]],
   "eqBands": [31.5,63,125,250,500,1000,2000,4000,8000,16000],
   "eqShapes": {"white":[21,25,30,35,42,50,60,71,84,100],"pink":[100,"…"],"brown":[100,84,"…",21]},

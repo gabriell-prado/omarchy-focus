@@ -120,7 +120,7 @@ pub struct Noise {
     scale: f32,
     /// Only for `NoiseColor::Custom`.
     eq: Option<Equalizer>,
-    /// Width, softness and tape, after the generator.
+    /// Width and softness, after the generator.
     chain: Chain,
 }
 
