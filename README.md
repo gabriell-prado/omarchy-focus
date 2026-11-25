@@ -63,7 +63,7 @@ If the engine is not running, the panel says so and offers to start it.
 | Bar icon, middle click | focus sound on / off |
 | Panel: `Space` / `Enter` | start / pause |
 | Panel: `r` · `s` · `n` | reset · skip · sound on/off |
-| Panel: `1`–`5`, `←` `→` | Timer · Sound · Noise · Tone · Alerts pages |
+| Panel: `1`–`3`, `←` `→` | Timer · Noise · Alerts pages |
 
 The bar shows the remaining time while a session runs. The icon changes for
 focus (󰔛), breaks (󰅶) and pause (󰏤).
@@ -71,16 +71,15 @@ focus (󰔛), breaks (󰅶) and pause (󰏤).
 - **Timer**: method presets (25/5, 50/10, 52/17, 90/20) with the evidence for
   each, sliders for focus / short break / long break / sessions per set, and
   auto-start switches.
-- **Sound**: master switch, seven research-based presets, the evidence card,
-  noise and tone volume, and *Only during focus sessions* (sound starts with a
-  focus session and stops for pauses and breaks). Otherwise the sound is
-  continuous until you switch it off. Picking a preset or changing the sound
-  switches it on; when it follows the timer and no focus session is running,
-  the change is previewed until you close the panel.
-- **Noise**: noise color, a ten-band equalizer to shape it by hand, and its
-  texture: softness and stereo width.
-- **Tone**: the brainwave tone (binaural / isochronic), beat frequency with
-  its EEG band, and carrier tone.
+- **Noise**: the whole focus sound on one page. The master switch, seven
+  research-based presets with their evidence card, noise and tone volume, and
+  *Only during focus sessions* (sound starts with a focus session and stops for
+  pauses and breaks; otherwise it is continuous until you switch it off). Then
+  the noise color, a ten-band equalizer, softness and stereo width, and the
+  brainwave tone (binaural / isochronic) with its beat and carrier. Picking a
+  preset or changing the sound switches it on; when it follows the timer and
+  no focus session is running, the change is previewed until you close the
+  panel.
 
 ### Shaping the noise
 

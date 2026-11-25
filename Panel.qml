@@ -11,7 +11,7 @@ import "ui"
 //
 // Bar:   left click opens the panel, right click starts/pauses, middle click
 //        turns the focus sound on or off.
-// Panel: Space/Enter start/pause, r reset, s skip, n sound, 1-5 or ←/→ pages.
+// Panel: Space/Enter start/pause, r reset, s skip, n sound, 1-3 or ←/→ pages.
 Panel {
   id: root
   moduleName: Model.PLUGIN_ID
@@ -86,7 +86,7 @@ Panel {
   // ---------------------------------------------------------------- pages
 
   property string page: "timer"
-  readonly property var pages: ["timer", "sound", "noise", "tone", "alerts"]
+  readonly property var pages: ["timer", "noise", "alerts"]
   function cyclePage(delta) {
     var i = pages.indexOf(page)
     page = pages[(i + delta + pages.length) % pages.length]
@@ -159,7 +159,7 @@ Panel {
         if (text === "r") root.svc.reset()
         else if (text === "s") root.svc.skip()
         else if (text === "n") root.svc.setSoundEnabled(!root.cfg.soundEnabled)
-        else if (text >= "1" && text <= "5") root.page = root.pages[Number(text) - 1]
+        else if (text >= "1" && text <= String(root.pages.length)) root.page = root.pages[Number(text) - 1]
       }
 
       Flickable {
@@ -309,41 +309,6 @@ Panel {
             }
           }
 
-          // ---------- Controls ----------
-          Row {
-            id: controls
-            visible: root.online
-            width: parent.width
-            spacing: Style.space(6)
-            readonly property real cell: (width - spacing * 2) / 3
-
-            PanelButton {
-              ctx: uiCtx
-              width: controls.cell
-              iconText: root.running ? Model.GLYPH.pause : Model.GLYPH.play
-              text: uiCtx.t(root.running ? "action.pause" : (root.paused ? "action.resume" : "action.start"))
-              onClicked: root.svc.toggle()
-            }
-            PanelButton {
-              ctx: uiCtx
-              width: controls.cell
-              iconText: Model.GLYPH.reset
-              text: uiCtx.t("action.reset")
-              enabled: root.phase !== "idle"
-              opacity: enabled ? 1 : 0.4
-              onClicked: root.svc.reset()
-            }
-            PanelButton {
-              ctx: uiCtx
-              width: controls.cell
-              iconText: Model.GLYPH.skip
-              text: uiCtx.t("action.skip")
-              enabled: root.phase !== "idle"
-              opacity: enabled ? 1 : 0.4
-              onClicked: root.svc.skip()
-            }
-          }
-
           PanelSeparator { visible: root.online; width: parent.width; foreground: uiCtx.fg }
 
           // ---------- Pages ----------
@@ -352,19 +317,19 @@ Panel {
             ctx: uiCtx
             options: [
               { value: "timer", label: uiCtx.t("tab.timer"), icon: Model.GLYPH.timer },
-              { value: "sound", label: uiCtx.t("tab.sound"), icon: Model.GLYPH.headphones },
-              { value: "noise", label: uiCtx.t("tab.noise"), icon: Model.GLYPH.wave },
-              { value: "tone", label: uiCtx.t("tab.tone"), icon: Model.GLYPH.sine },
+              { value: "noise", label: uiCtx.t("tab.noise"), icon: Model.GLYPH.headphones },
               { value: "alerts", label: uiCtx.t("tab.alerts"), icon: Model.GLYPH.bell }
             ]
             value: root.page
             onPicked: function(v) { root.page = v }
           }
 
+          // Keeps the tabs apart from the first row of each page (on Timer,
+          // the start / reset / skip buttons, which look like tabs).
+          PanelSeparator { visible: root.online; width: parent.width; foreground: uiCtx.fg }
+
           TimerPage { ctx: uiCtx; visible: root.online && root.page === "timer" }
-          SoundPage { ctx: uiCtx; visible: root.online && root.page === "sound" }
           NoisePage { ctx: uiCtx; visible: root.online && root.page === "noise" }
-          TonePage { ctx: uiCtx; visible: root.online && root.page === "tone" }
           AlertsPage {
             id: alertsPage
             ctx: uiCtx

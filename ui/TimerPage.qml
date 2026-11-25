@@ -16,6 +16,47 @@ Column {
   width: parent ? parent.width : 0
   spacing: Style.space(10)
 
+  PanelSectionHeader { text: page.ctx.t("timer.session"); foreground: page.ctx.fg; fontFamily: page.ctx.fontFamily }
+
+  // ---------- Start / pause · reset · skip ----------
+  Row {
+    id: controls
+    width: parent.width
+    spacing: Style.space(6)
+    readonly property real cell: (width - spacing * 2) / 3
+    readonly property string phase: page.svc ? page.svc.phase : "idle"
+    readonly property bool running: !!(page.svc && page.svc.running)
+    readonly property bool paused: !!(page.svc && page.svc.paused)
+
+    PanelButton {
+      ctx: page.ctx
+      width: controls.cell
+      iconText: controls.running ? Model.GLYPH.pause : Model.GLYPH.play
+      text: page.ctx.t(controls.running ? "action.pause" : (controls.paused ? "action.resume" : "action.start"))
+      onClicked: page.svc.toggle()
+    }
+    PanelButton {
+      ctx: page.ctx
+      width: controls.cell
+      iconText: Model.GLYPH.reset
+      text: page.ctx.t("action.reset")
+      enabled: controls.phase !== "idle"
+      opacity: enabled ? 1 : 0.4
+      onClicked: page.svc.reset()
+    }
+    PanelButton {
+      ctx: page.ctx
+      width: controls.cell
+      iconText: Model.GLYPH.skip
+      text: page.ctx.t("action.skip")
+      enabled: controls.phase !== "idle"
+      opacity: enabled ? 1 : 0.4
+      onClicked: page.svc.skip()
+    }
+  }
+
+  PanelSeparator { width: parent.width; foreground: page.ctx.fg }
+
   PanelSectionHeader { text: page.ctx.t("timer.method"); foreground: page.ctx.fg; fontFamily: page.ctx.fontFamily }
 
   Chips {

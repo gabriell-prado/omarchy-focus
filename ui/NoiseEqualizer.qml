@@ -11,6 +11,7 @@ Column {
   id: eq
 
   property var ctx: null
+  property real sliderHeight: Style.space(112)
   readonly property var cfg: ctx ? ctx.cfg : ({})
   readonly property var catalog: ctx ? ctx.catalog : null
   readonly property var freqs: catalog && catalog.eqBands ? catalog.eqBands : []
@@ -99,7 +100,7 @@ Column {
           id: slider
           anchors.horizontalCenter: parent.horizontalCenter
           ctx: eq.ctx
-          height: Style.space(112)
+          height: eq.sliderHeight
           value: eq.levels[band.index] !== undefined ? eq.levels[band.index] : 100
           // Shown, but quieter, while the noise is off.
           opacity: eq.cfg.noiseColor === "off" ? 0.45 : 1
