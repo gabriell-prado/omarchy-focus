@@ -60,7 +60,7 @@ If the engine is not running, the panel says so and offers to start it.
 |---|---|
 | Bar icon, left click | open the panel |
 | Bar icon, right click | start / pause |
-| Bar icon, middle click | focus sound on / off |
+| Bar icon, middle click | skip to the next phase |
 | Bar icon, scroll | add / take away a minute from the session in progress |
 | Panel: `Space` / `Enter` | start / pause |
 | Panel: `r` · `s` · `n` | reset · skip · sound on/off |

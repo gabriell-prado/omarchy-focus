@@ -10,8 +10,8 @@ import "ui"
 // the single Service (the engine client) and send every action through it.
 //
 // Bar:   left click opens the panel, right click starts/pauses, middle click
-//        turns the focus sound on or off, scrolling adds or removes a minute
-//        from the session in progress.
+//        skips to the next phase, scrolling adds or removes a minute from the
+//        session in progress.
 // Panel: Space/Enter start/pause, r reset, s skip, n sound, + / − one minute,
 //        1-3 or ←/→ pages.
 Panel {
@@ -147,7 +147,7 @@ Panel {
       if (b === Qt.RightButton) {
         if (root.svc) root.svc.toggle()
       } else if (b === Qt.MiddleButton) {
-        if (root.svc) root.svc.toggleSound()
+        if (root.svc) root.svc.skip()
       } else {
         root.toggle()
       }

@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Focus",
-    "description": "Pomodoro timer and focus sounds. Click for options, right-click to start or pause, middle-click to toggle the sound, scroll to add or take away a minute.",
+    "description": "Pomodoro timer and focus sounds. Click for options, right-click to start or pause, middle-click to skip, scroll to add or take away a minute.",
     "category": "Productivity",
     "allowMultiple": false,
     "defaultSection": "centerBegin",
