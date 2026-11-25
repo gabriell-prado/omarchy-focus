@@ -79,7 +79,8 @@ out, with its alert.
   each, sliders for focus / short break / long break / sessions per set, and
   auto-start switches.
 - **Noise**: the whole focus sound on one page. The master switch, seven
-  research-based presets with their evidence card, noise and tone volume, and
+  research-based presets with their evidence card (a preset sets what the
+  sound is, never its volume), noise and tone volume, and
   *Only during focus sessions* (sound starts with a focus session and stops for
   pauses and breaks; otherwise it is continuous until you switch it off). Then
   the noise color, a ten-band equalizer, softness and stereo width, and the

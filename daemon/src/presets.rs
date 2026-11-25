@@ -28,40 +28,39 @@ pub const CUSTOM_TIMER_REFS: &str = "Ariga & Lleras 2011";
 /// Evidence: "moderate" (replicated or meta-analytic support), "limited"
 /// (single or small studies, or indirect support), "experimental" (mostly
 /// animal work or mechanism only).
+///
+/// A preset says what the sound is (noise color, tone and its frequencies),
+/// never how loud: the volume sliders stay where the user put them.
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SoundPreset {
     pub id: &'static str,
     pub evidence: &'static str,
     pub noise_color: NoiseColor,
-    pub noise_volume: u32,
     pub beat_mode: BeatMode,
     pub beat_hz: u32,
     pub carrier_hz: u32,
-    pub tone_volume: u32,
     pub refs: &'static str,
 }
 
-const fn noise(id: &'static str, evidence: &'static str, color: NoiseColor, volume: u32, refs: &'static str) -> SoundPreset {
-    SoundPreset { id, evidence, noise_color: color, noise_volume: volume, beat_mode: BeatMode::Off, beat_hz: 0, carrier_hz: 0, tone_volume: 0, refs }
+const fn noise(id: &'static str, evidence: &'static str, color: NoiseColor, refs: &'static str) -> SoundPreset {
+    SoundPreset { id, evidence, noise_color: color, beat_mode: BeatMode::Off, beat_hz: 0, carrier_hz: 0, refs }
 }
 
-#[allow(clippy::too_many_arguments)]
 const fn beats(
-    id: &'static str, evidence: &'static str, color: NoiseColor, volume: u32,
-    mode: BeatMode, hz: u32, carrier: u32, tone: u32, refs: &'static str,
+    id: &'static str, evidence: &'static str, color: NoiseColor, mode: BeatMode, hz: u32, carrier: u32, refs: &'static str,
 ) -> SoundPreset {
-    SoundPreset { id, evidence, noise_color: color, noise_volume: volume, beat_mode: mode, beat_hz: hz, carrier_hz: carrier, tone_volume: tone, refs }
+    SoundPreset { id, evidence, noise_color: color, beat_mode: mode, beat_hz: hz, carrier_hz: carrier, refs }
 }
 
 pub const SOUND_PRESETS: &[SoundPreset] = &[
-    noise("speech", "moderate", NoiseColor::Pink, 50, "Colle & Welsh 1976 · Hongisto 2005"),
-    noise("white", "moderate", NoiseColor::White, 45, "Söderlund et al. 2007, 2010"),
-    noise("brown", "limited", NoiseColor::Brown, 55, ""),
-    beats("beta", "limited", NoiseColor::Pink, 45, BeatMode::Binaural, 16, 250, 40, "Lane et al. 1998"),
-    beats("gamma", "limited", NoiseColor::Pink, 40, BeatMode::Binaural, 40, 400, 35, "Reedijk et al. 2015 · Garcia-Argibay et al. 2019"),
-    beats("alpha", "limited", NoiseColor::Brown, 45, BeatMode::Binaural, 10, 200, 40, "Garcia-Argibay et al. 2019"),
-    beats("iso40", "experimental", NoiseColor::Brown, 35, BeatMode::Isochronic, 40, 300, 30, "Martorell et al. 2019"),
+    noise("speech", "moderate", NoiseColor::Pink, "Colle & Welsh 1976 · Hongisto 2005"),
+    noise("white", "moderate", NoiseColor::White, "Söderlund et al. 2007, 2010"),
+    noise("brown", "limited", NoiseColor::Brown, ""),
+    beats("beta", "limited", NoiseColor::Pink, BeatMode::Binaural, 16, 250, "Lane et al. 1998"),
+    beats("gamma", "limited", NoiseColor::Pink, BeatMode::Binaural, 40, 400, "Reedijk et al. 2015 · Garcia-Argibay et al. 2019"),
+    beats("alpha", "limited", NoiseColor::Brown, BeatMode::Binaural, 10, 200, "Garcia-Argibay et al. 2019"),
+    beats("iso40", "experimental", NoiseColor::Brown, BeatMode::Isochronic, 40, 300, "Martorell et al. 2019"),
 ];
 
 pub fn match_timer(s: &Settings) -> &'static str {
@@ -104,15 +103,14 @@ pub fn match_sound(s: &Settings) -> &'static str {
         .unwrap_or("custom")
 }
 
+/// Apply a preset's sound; volumes are left untouched.
 pub fn apply_sound(id: &str, s: &mut Settings) -> bool {
     let Some(p) = SOUND_PRESETS.iter().find(|p| p.id == id) else { return false };
     s.noise_color = p.noise_color;
-    s.noise_volume = p.noise_volume;
     s.beat_mode = p.beat_mode;
     if p.beat_mode != BeatMode::Off {
         s.beat_hz = p.beat_hz;
         s.carrier_hz = p.carrier_hz;
-        s.tone_volume = p.tone_volume;
     }
     true
 }
@@ -154,6 +152,10 @@ mod tests {
             assert_eq!(match_sound(&s), p.id);
             s.noise_volume = 3;
             assert_eq!(match_sound(&s), p.id, "volume must not change the preset");
+            let before = Settings { noise_volume: 17, tone_volume: 83, ..Settings::default() };
+            let mut after = before.clone();
+            apply_sound(p.id, &mut after);
+            assert_eq!((after.noise_volume, after.tone_volume), (17, 83), "{}: a preset never changes the volumes", p.id);
             assert!(seen.insert((p.noise_color, p.beat_mode, p.beat_hz, p.carrier_hz)), "duplicate preset {}", p.id);
         }
     }
