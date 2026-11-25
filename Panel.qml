@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
@@ -18,6 +19,29 @@ Panel {
   id: root
   moduleName: Model.PLUGIN_ID
   ipcTarget: Model.PLUGIN_ID
+  // Every monitor's bar has its own copy of this widget (and the bar may keep
+  // copies that are not on screen). The shell answers an IPC call with the
+  // first enabled handler, so only the copy shown on the focused monitor
+  // enables its own: `omarchy-shell local.focus toggle` opens the panel where
+  // you are working.
+  manageIpc: false
+
+  readonly property string screenName: {
+    var w = root.QsWindow.window
+    return w && w.screen ? String(w.screen.name) : ""
+  }
+  readonly property string focusedMonitor: Hyprland.focusedMonitor ? String(Hyprland.focusedMonitor.name) : ""
+
+  ShellIpc {
+    target: Model.PLUGIN_ID
+    enabled: root.visible && root.screenName !== "" && root.screenName === root.focusedMonitor
+
+    function open(): void { root.open() }
+    function close(): void { root.close() }
+    function show(): void { root.open() }
+    function hide(): void { root.close() }
+    function toggle(): void { root.toggle() }
+  }
 
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
 
