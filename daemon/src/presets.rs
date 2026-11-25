@@ -58,7 +58,6 @@ pub const SOUND_PRESETS: &[SoundPreset] = &[
     noise("white", "moderate", NoiseColor::White, "Söderlund et al. 2007, 2010"),
     noise("brown", "limited", NoiseColor::Brown, ""),
     beats("beta", "limited", NoiseColor::Pink, BeatMode::Binaural, 16, 250, "Lane et al. 1998"),
-    beats("gamma", "limited", NoiseColor::Pink, BeatMode::Binaural, 40, 400, "Reedijk et al. 2015 · Garcia-Argibay et al. 2019"),
     beats("alpha", "limited", NoiseColor::Brown, BeatMode::Binaural, 10, 200, "Garcia-Argibay et al. 2019"),
     beats("iso40", "experimental", NoiseColor::Brown, BeatMode::Isochronic, 40, 300, "Martorell et al. 2019"),
 ];

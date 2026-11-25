@@ -78,7 +78,7 @@ out, with its alert.
 - **Timer**: method presets (25/5, 50/10, 52/17, 90/20) with the evidence for
   each, sliders for focus / short break / long break / sessions per set, and
   auto-start switches.
-- **Noise**: the whole focus sound on one page. The master switch, seven
+- **Noise**: the whole focus sound on one page. The master switch, six
   research-based presets with their evidence card (a preset sets what the
   sound is, never its volume), noise and tone volume, and
   *Only during focus sessions* (sound starts with a focus session and stops for
@@ -128,7 +128,7 @@ omarchy-focus toggle | start | pause | reset | skip
 omarchy-focus adjust +5                    # or -2: change the session in progress
 omarchy-focus sound [on|off|toggle]
 omarchy-focus preset timer classic|deep|desktime|ultradian
-omarchy-focus preset sound speech|white|brown|beta|gamma|alpha|iso40
+omarchy-focus preset sound speech|white|brown|beta|alpha|iso40
 omarchy-focus set focusMinutes 50          # any setting below
 omarchy-focus alert bowl                   # play an alert (none stops it)
 omarchy-focus status [--full]              # JSON
@@ -182,7 +182,6 @@ volume. Your system volume still sets the actual level, so keep it moderate.
 | Attention boost | white noise | moderate (population-specific) | White noise improved memory in inattentive/ADHD children and slightly impaired attentive ones (moderate brain arousal model). |
 | Deep brown | brown noise | limited | Same masking principle with less high-frequency energy; popular, little direct research. |
 | Beta vigilance | pink + 16 Hz binaural | limited | Beta beats in pink noise improved vigilance and mood vs 1.5–4 Hz beats (small study). |
-| Gamma attention | pink + 40 Hz binaural | limited | 40 Hz beats reduced the attentional blink, only in some listeners (dopamine-dependent). |
 | Alpha calm | brown + 10 Hz binaural | limited | Meta-analysis: binaural beats affect memory, attention, anxiety, with high heterogeneity. |
 | 40 Hz pulses | brown + 40 Hz isochronic | experimental | 40 Hz sensory stimulation (GENUS) benefits shown in mice; unproven for healthy human cognition. |
 
@@ -211,7 +210,6 @@ evidence for knowledge work). Brief planned breaks prevent vigilance decrements
 - Mehta, R., Zhu, R., & Cheema, A. (2012). Is noise always bad? Exploring the effects of ambient noise on creative cognition. *Journal of Consumer Research*, 39(4), 784–799.
 - Ando, Y. (1985). *Concert Hall Acoustics*. Springer.
 - ANSI S3.5-1997. *Methods for Calculation of the Speech Intelligibility Index*.
-- Reedijk, S. A., Bolders, A., Colzato, L. S., & Hommel, B. (2015). Eliminating the attentional blink through binaural beats: a case for tailored cognitive enhancement. *Frontiers in Psychiatry*, 6, 82.
 - Söderlund, G., Sikström, S., & Smart, A. (2007). Listen to the noise: noise is beneficial for cognitive performance in ADHD. *Journal of Child Psychology and Psychiatry*, 48(8), 840–847.
 - Söderlund, G. B. W., Sikström, S., Loftesnes, J. M., & Sonuga-Barke, E. J. (2010). The effects of background white noise on memory performance in inattentive school children. *Behavioral and Brain Functions*, 6, 55.
 - WHO & ITU (2019). *H.870: Safe listening devices and systems*.
@@ -237,7 +235,7 @@ systemd/omarchy-focus.service user service
 Makefile                      build · test · install · uninstall
 ```
 
-- `omarchy-focus render --preset gamma --seconds 10 --out /tmp/x.wav` renders
+- `omarchy-focus render --preset beta --seconds 10 --out /tmp/x.wav` renders
   a sound offline (also `--noise <color>`, `--alert <id>`, `--bands`,
   `--softness`, `--width`), for listening or measuring with
   `ffmpeg -af ebur128`.

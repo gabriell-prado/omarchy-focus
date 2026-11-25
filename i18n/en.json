@@ -78,8 +78,6 @@
   "preset.brown.note": "A deep, soft rumble. It masks sound the same way with far less high-frequency hiss, so many find it easier to bear for hours. Very popular, but there is little direct research on brown noise and focus.",
   "preset.beta.name": "Beta vigilance",
   "preset.beta.note": "16 Hz binaural beats in pink noise improved vigilance and mood compared with slow 1.5–4 Hz beats. A small study. Needs headphones.",
-  "preset.gamma.name": "Gamma attention",
-  "preset.gamma.note": "40 Hz binaural beats reduced the attentional blink (missing a second target right after a first), but only in some people, depending on their dopamine levels. Needs headphones.",
   "preset.alpha.name": "Alpha calm",
   "preset.alpha.note": "10 Hz beats over brown noise for relaxed alertness, good for settling in before work. A meta-analysis found binaural beats can help memory, attention and anxiety, with large differences between studies. Needs headphones.",
   "preset.iso40.name": "40 Hz pulses",

@@ -78,8 +78,6 @@
   "preset.brown.note": "Um ronco grave e suave. Mascara o som do mesmo jeito com muito menos chiado agudo, por isso muita gente o tolera por horas. Muito popular, mas há pouca pesquisa direta sobre ruído marrom e foco.",
   "preset.beta.name": "Vigilância beta",
   "preset.beta.note": "Batidas binaurais de 16 Hz em ruído rosa melhoraram a vigilância e o humor em comparação com batidas lentas de 1,5–4 Hz. Estudo pequeno. Requer fones de ouvido.",
-  "preset.gamma.name": "Atenção gama",
-  "preset.gamma.note": "Batidas binaurais de 40 Hz reduziram o piscar atencional (perder um segundo alvo logo após o primeiro), mas só em algumas pessoas, conforme seus níveis de dopamina. Requer fones de ouvido.",
   "preset.alpha.name": "Calma alfa",
   "preset.alpha.note": "Batidas de 10 Hz sobre ruído marrom para um alerta relaxado, bom para se preparar antes do trabalho. Uma meta-análise viu que batidas binaurais podem ajudar memória, atenção e ansiedade, com grande variação entre estudos. Requer fones de ouvido.",
   "preset.iso40.name": "Pulsos de 40 Hz",

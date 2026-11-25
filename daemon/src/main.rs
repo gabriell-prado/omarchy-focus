@@ -20,7 +20,7 @@ Usage:
   omarchy-focus adjust <minutes>             add (+5) or take away (-5) time now
   omarchy-focus sound [on|off|toggle]        focus sound on/off
   omarchy-focus preset timer <id>            classic | deep | desktime | ultradian
-  omarchy-focus preset sound <id>            speech | white | brown | beta | gamma | alpha | iso40
+  omarchy-focus preset sound <id>            speech | white | brown | beta | alpha | iso40
   omarchy-focus set <key> <value>            e.g. set focusMinutes 50, set noiseColor brown
   omarchy-focus alert <id>                   play an alert sound (none stops it)
   omarchy-focus status [--full]              JSON summary (or the full state)

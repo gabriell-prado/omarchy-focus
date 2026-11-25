@@ -203,7 +203,7 @@ fn imports_settings_and_resumes_a_running_session() {
     });
     let s = d.status();
     assert_eq!(s["settings"]["noiseVolume"], 40);
-    assert_eq!(s["soundPreset"], "gamma");
+    assert_eq!(s["soundPreset"], "custom", "40 Hz binaural on pink is no longer a preset");
     assert_eq!((s["phase"].as_str(), s["running"].as_bool(), s["session"].as_u64()), (Some("focus"), Some(true), Some(2)));
     let left = s["leftMs"].as_f64().unwrap();
     assert!(left > 590_000.0 && left <= 600_000.0, "left {left}");
