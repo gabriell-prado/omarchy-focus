@@ -56,9 +56,10 @@ Item {
     }
   }
 
-  // Connect at start, and again whenever the engine restarts or goes away.
+  // Connect at start, and again whenever the engine restarts or goes away
+  // (only runs while disconnected).
   Timer {
-    interval: 2000
+    interval: 1000
     repeat: true
     triggeredOnStart: true
     running: !sock.connected
