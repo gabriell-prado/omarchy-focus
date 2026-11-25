@@ -118,7 +118,10 @@
   "alerts.customPath": "Custom sound file",
   "alerts.customPlaceholder": "~/Music/bell.ogg",
   "alerts.notify": "Desktop notification",
-  "alerts.barTime": "Show the time in the bar",
+  "timer.barDisplay": "Show in the bar",
+  "barDisplay.none": "Icon",
+  "barDisplay.time": "Time",
+  "barDisplay.ring": "Ring",
   "alerts.note": "Different sounds for the end of focus and the end of a break let you tell them apart without looking.",
 
   "alert.none": "Silent",

@@ -29,6 +29,26 @@ pub enum BeatMode {
     Isochronic,
 }
 
+/// What the bar widget shows.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BarDisplay {
+    /// Just the icon.
+    None,
+    /// The icon and the time left.
+    Time,
+    /// A ring, in the theme's accent, whose border fills as the session passes.
+    Ring,
+}
+
+pub const BAR_DISPLAYS: [BarDisplay; 3] = [BarDisplay::None, BarDisplay::Time, BarDisplay::Ring];
+
+impl BarDisplay {
+    pub fn parse(s: &str) -> Option<BarDisplay> {
+        serde_json::from_value(Value::String(s.to_string())).ok()
+    }
+}
+
 pub const NOISE_COLORS: [NoiseColor; 5] =
     [NoiseColor::Off, NoiseColor::White, NoiseColor::Pink, NoiseColor::Brown, NoiseColor::Custom];
 
@@ -78,7 +98,7 @@ pub struct Settings {
     pub alert_volume: u32,
     pub custom_sound_path: String,
     pub desktop_notifications: bool,
-    pub show_time_in_bar: bool,
+    pub bar_display: BarDisplay,
 }
 
 impl Default for Settings {
@@ -106,7 +126,7 @@ impl Default for Settings {
             alert_volume: 70,
             custom_sound_path: String::new(),
             desktop_notifications: true,
-            show_time_in_bar: true,
+            bar_display: BarDisplay::Time,
         }
     }
 }
@@ -156,6 +176,15 @@ impl Settings {
     pub fn from_value(raw: &Value) -> Settings {
         let defaults = serde_json::to_value(Settings::default()).expect("settings serialize");
         let mut merged = defaults.as_object().cloned().unwrap_or_default();
+        // Earlier versions had an on/off `showTimeInBar`; it became `barDisplay`.
+        let mut raw = raw.clone();
+        if let Some(obj) = raw.as_object_mut() {
+            if !obj.contains_key("barDisplay") {
+                if let Some(show) = obj.get("showTimeInBar").and_then(Value::as_bool) {
+                    obj.insert("barDisplay".into(), Value::from(if show { "time" } else { "none" }));
+                }
+            }
+        }
         if let Some(obj) = raw.as_object() {
             for (key, value) in obj {
                 let Some(default) = merged.get(key).cloned() else { continue };
@@ -253,6 +282,7 @@ fn coerce(key: &str, value: &Value, default: &Value, strict: bool) -> Option<Val
             let s = value.as_str()?;
             match key {
                 "noiseColor" => NoiseColor::parse(s).map(|_| Value::from(s)),
+                "barDisplay" => BarDisplay::parse(s).map(|_| Value::from(s)),
                 "beatMode" => BeatMode::parse(s).map(|_| Value::from(s)),
                 "focusEndSound" | "breakEndSound" => ALERT_IDS.contains(&s).then(|| Value::from(s)),
                 _ => Some(Value::from(s.chars().take(1024).collect::<String>())),
@@ -300,6 +330,17 @@ mod tests {
         assert!(d.patched(json!({"noiseColor": "purple"}).as_object().unwrap()).is_err());
         assert!(d.patched(json!({"autoStartBreaks": "maybe"}).as_object().unwrap()).is_err());
         assert_eq!(d.patched(json!({"focusMinutes": 500}).as_object().unwrap()).unwrap().focus_minutes, 180);
+    }
+
+    #[test]
+    fn bar_display_and_its_migration() {
+        assert_eq!(Settings::default().bar_display, BarDisplay::Time);
+        assert_eq!(Settings::from_value(&json!({"showTimeInBar": false})).bar_display, BarDisplay::None);
+        assert_eq!(Settings::from_value(&json!({"showTimeInBar": true})).bar_display, BarDisplay::Time);
+        assert_eq!(Settings::from_value(&json!({"showTimeInBar": false, "barDisplay": "ring"})).bar_display, BarDisplay::Ring);
+        let d = Settings::default();
+        assert_eq!(d.patched(json!({"barDisplay": "ring"}).as_object().unwrap()).unwrap().bar_display, BarDisplay::Ring);
+        assert!(d.patched(json!({"barDisplay": "clock"}).as_object().unwrap()).is_err());
     }
 
     #[test]

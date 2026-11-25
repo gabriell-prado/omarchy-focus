@@ -118,7 +118,10 @@
   "alerts.customPath": "Arquivo de som personalizado",
   "alerts.customPlaceholder": "~/Música/sino.ogg",
   "alerts.notify": "Notificação na área de trabalho",
-  "alerts.barTime": "Mostrar o tempo na barra",
+  "timer.barDisplay": "Mostrar na barra",
+  "barDisplay.none": "Ícone",
+  "barDisplay.time": "Tempo",
+  "barDisplay.ring": "Anel",
   "alerts.note": "Sons diferentes para o fim do foco e o fim da pausa permitem distinguir um do outro sem olhar.",
 
   "alert.none": "Silencioso",

@@ -67,8 +67,11 @@ If the engine is not running, the panel says so and offers to start it.
 | Panel: `+` · `−` | add / take away a minute |
 | Panel: `1`–`3`, `←` `→` | Timer · Noise · Alerts pages |
 
-The bar shows the remaining time while a session runs. The icon changes for
-focus (󰔛), breaks (󰅶) and pause (󰏤).
+What the bar shows is chosen on the Timer page: **Icon** (it changes for focus
+󰔛, breaks 󰅶 and pause 󰏤), **Time** (the icon and the time left, the default)
+or **Ring** (while a session runs, the icon becomes a ring in the theme's
+accent color whose border fills clockwise as the session passes; otherwise it
+shows the same icon as Icon).
 
 On the Timer page, under Start / Reset / Skip, **−5 · −1 · +1 · +5 min**
 change the session in progress (focus or break, running or paused) without
@@ -119,7 +122,7 @@ which a binaural beat needs exactly as generated.
 - **Alerts**: separate sounds for *focus ends* and *break ends* (4 synthesised
   tones, 7 freedesktop sounds, or a custom file). The arrows choose and play
   the previous/next sound; clicking the name plays it again. Also volume,
-  desktop notifications, and whether to show the time in the bar.
+  desktop notifications.
 
 ### Command line
 
@@ -164,7 +167,8 @@ start the engine imports the settings the earlier QML-only version kept in
 | `focusEndSound` / `breakEndSound` | `bowl` / `chime` | `none` `chime` `bowl` `beep` `rise` `complete` `bell` `message` `alarm` `attention` `login` `phone` `custom` |
 | `alertVolume` | 70 | 0–100 |
 | `customSoundPath` | `""` | absolute or `~/` path (ogg, mp3, flac, wav); at most 30 s |
-| `desktopNotifications` / `showTimeInBar` | true / true | |
+| `desktopNotifications` | true | |
+| `barDisplay` | `time` | `none` (icon) · `time` (icon and time left) · `ring` (a ring in the theme's accent whose border fills as the session passes) |
 
 Timer progress is kept in `~/.local/state/omarchy-focus/state.json`. A
 session that ended more than a minute before the engine started moves on

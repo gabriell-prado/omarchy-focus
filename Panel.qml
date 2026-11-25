@@ -97,7 +97,13 @@ Panel {
   // ---------------------------------------------------------------- bar button
 
   readonly property color barFg: bar ? bar.barForeground : Commons.Color.foreground
-  readonly property bool showTime: online && !!cfg.showTimeInBar && phase !== "idle" && !(bar && bar.vertical)
+  // What the bar shows: "none" (icon), "time" (icon and time left) or
+  // "ring" (a ring in the theme's accent that fills as the session passes).
+  // The ring is only for a session that is running: idle, queued or paused,
+  // the bar shows the same icon as in "none" (a queued break is a grey cup).
+  readonly property string barDisplay: cfg.barDisplay || "time"
+  readonly property bool showTime: online && barDisplay === "time" && phase !== "idle" && !(bar && bar.vertical)
+  readonly property bool showRing: online && barDisplay === "ring" && running
 
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
@@ -114,6 +120,7 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: Model.barGlyph(root.phase, root.running, root.fresh)
+    iconComponent: root.showRing ? ringIcon : null
     labelText: root.showTime ? root.clock : ""
     // The status slot, like Elsewhen and Weather beside the clock; the time,
     // when shown, adds its own width plus BarIconButton's label-to-icon gap.
@@ -139,6 +146,50 @@ Panel {
         if (root.svc) root.svc.toggleSound()
       } else {
         root.toggle()
+      }
+    }
+  }
+
+  // The ring: a faint full circle, and over it an arc in the theme's accent
+  // from twelve o'clock, clockwise, as far as the running session has gone.
+  // Only the border is drawn.
+  Component {
+    id: ringIcon
+
+    Canvas {
+      id: ring
+      width: Style.bar.iconSize
+      height: Style.bar.iconSize
+
+      readonly property real progress: root.progress
+      readonly property color track: Qt.rgba(root.barFg.r, root.barFg.g, root.barFg.b, 0.35)
+      readonly property color fill: Commons.Color.accent
+
+      onProgressChanged: requestPaint()
+      onTrackChanged: requestPaint()
+      onFillChanged: requestPaint()
+      onWidthChanged: requestPaint()
+
+      onPaint: {
+        var ctx = getContext("2d")
+        ctx.reset()
+        var line = Math.max(1.5, width * 0.16)
+        var radius = (Math.min(width, height) - line) / 2
+        var cx = width / 2
+        var cy = height / 2
+        ctx.lineWidth = line
+        ctx.strokeStyle = track
+        ctx.beginPath()
+        ctx.arc(cx, cy, radius, 0, 2 * Math.PI)
+        ctx.stroke()
+        if (progress > 0) {
+          var start = -Math.PI / 2
+          ctx.strokeStyle = fill
+          ctx.lineCap = "round"
+          ctx.beginPath()
+          ctx.arc(cx, cy, radius, start, start + progress * 2 * Math.PI, false)
+          ctx.stroke()
+        }
       }
     }
   }

@@ -144,6 +144,22 @@ Column {
     checked: !!page.cfg.autoStartFocus
     onToggled: page.svc.update({ autoStartFocus: !page.cfg.autoStartFocus })
   }
+  Text {
+    textFormat: Text.PlainText
+    text: page.ctx.t("timer.barDisplay")
+    color: page.ctx.fg
+    opacity: 0.75
+    font.family: page.ctx.fontFamily
+    font.pixelSize: Style.font.bodySmall
+  }
+  Chips {
+    ctx: page.ctx
+    options: (page.ctx.catalog && page.ctx.catalog.barDisplays ? page.ctx.catalog.barDisplays : []).map(function(d) {
+      return { value: d, label: page.ctx.t("barDisplay." + d) }
+    })
+    value: page.cfg.barDisplay || "time"
+    onPicked: function(v) { page.svc.update({ barDisplay: v }) }
+  }
 
   Note { ctx: page.ctx; text: page.ctx.t("timer.breaks.note") }
 }

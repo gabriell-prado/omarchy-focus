@@ -81,12 +81,6 @@ Column {
     checked: !!page.cfg.desktopNotifications
     onToggled: page.svc.update({ desktopNotifications: !page.cfg.desktopNotifications })
   }
-  SwitchRow {
-    ctx: page.ctx
-    label: page.ctx.t("alerts.barTime")
-    checked: !!page.cfg.showTimeInBar
-    onToggled: page.svc.update({ showTimeInBar: !page.cfg.showTimeInBar })
-  }
 
   Note { ctx: page.ctx; text: page.ctx.t("alerts.note") }
 }
