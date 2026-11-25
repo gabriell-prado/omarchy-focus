@@ -10,8 +10,10 @@ import "ui"
 // the single Service (the engine client) and send every action through it.
 //
 // Bar:   left click opens the panel, right click starts/pauses, middle click
-//        turns the focus sound on or off.
-// Panel: Space/Enter start/pause, r reset, s skip, n sound, 1-3 or ←/→ pages.
+//        turns the focus sound on or off, scrolling adds or removes a minute
+//        from the session in progress.
+// Panel: Space/Enter start/pause, r reset, s skip, n sound, + / − one minute,
+//        1-3 or ←/→ pages.
 Panel {
   id: root
   moduleName: Model.PLUGIN_ID
@@ -118,6 +120,18 @@ Panel {
     slotSize: Style.bar.statusSlot + (root.showTime ? Math.ceil(clockMetrics.advanceWidth) + Style.space(4) : 0)
     foreground: root.online && (root.running || root.phase === "idle") ? root.barFg : Qt.darker(root.barFg, 1.55)
     tooltipText: root.opened ? "" : root.tooltip
+    // Each mouse-wheel notch (120) is a minute; touchpads send smaller steps,
+    // which add up to one.
+    property real wheelAccumulated: 0
+    onWheelMoved: function(delta) {
+      if (!root.svc || !root.svc.canAdjust) return
+      wheelAccumulated += delta
+      while (Math.abs(wheelAccumulated) >= 120) {
+        var step = wheelAccumulated > 0 ? 1 : -1
+        wheelAccumulated -= step * 120
+        root.svc.adjust(step)
+      }
+    }
     onPressed: function(b) {
       if (b === Qt.RightButton) {
         if (root.svc) root.svc.toggle()
@@ -159,6 +173,8 @@ Panel {
         if (text === "r") root.svc.reset()
         else if (text === "s") root.svc.skip()
         else if (text === "n") root.svc.setSoundEnabled(!root.cfg.soundEnabled)
+        else if (text === "+" || text === "=") root.svc.adjust(1)
+        else if (text === "-" || text === "_") root.svc.adjust(-1)
         else if (text >= "1" && text <= String(root.pages.length)) root.page = root.pages[Number(text) - 1]
       }
 

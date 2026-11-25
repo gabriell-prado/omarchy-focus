@@ -30,6 +30,8 @@ Item {
   readonly property bool running: !!(engine && engine.running)
   readonly property bool fresh: engine ? engine.fresh : true
   readonly property bool paused: !!(engine && engine.paused)
+  // A session is in progress (running or paused), so its time can be changed.
+  readonly property bool canAdjust: phase !== "idle" && !fresh
   readonly property real totalMs: engine ? engine.totalMs : 0
   readonly property real leftMs: !engine ? 0 : (engine.running ? Math.max(0, engine.endsAt - now) : engine.leftMs)
   readonly property real progress: !engine || phase === "idle" || totalMs <= 0 ? 0 : Math.max(0, Math.min(1, 1 - leftMs / totalMs))
@@ -98,6 +100,8 @@ Item {
   function pause() { send({ cmd: "pause" }) }
   function reset() { send({ cmd: "reset" }) }
   function skip() { send({ cmd: "skip" }) }
+  // Add (or, negative, take away) minutes from the session in progress.
+  function adjust(minutes) { if (canAdjust) send({ cmd: "adjust", minutes: minutes }) }
 
   function update(patch) { send({ cmd: "set", patch: patch }) }
   function applyTimerPreset(id) { send({ cmd: "preset", kind: "timer", id: id }) }

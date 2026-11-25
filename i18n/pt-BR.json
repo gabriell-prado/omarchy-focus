@@ -20,6 +20,8 @@
   "action.resume": "Retomar",
   "action.reset": "Zerar",
   "action.skip": "Pular",
+  "adjust.more": "Adicionar tempo a esta sessão",
+  "adjust.less": "Tirar tempo desta sessão",
 
   "tab.timer": "Timer",
   "tab.noise": "Ruído",

@@ -176,6 +176,14 @@ impl Core {
             Command::Skip => {
                 self.timer.skip(now, &self.settings, &today);
             }
+            Command::Adjust { minutes } => {
+                if !minutes.is_finite() || minutes.abs() > 360.0 {
+                    return protocol::error("minutes must be between -360 and 360");
+                }
+                if !self.timer.adjust(now, minutes * 60_000.0) {
+                    return protocol::error("no session in progress");
+                }
+            }
             Command::Set { patch } => match self.settings.patched(&patch) {
                 Ok(s) => self.set_settings(s),
                 Err(e) => return protocol::error(e),

@@ -113,6 +113,9 @@ pub fn session_in_set(completed: u32, phase: Phase, s: &Settings) -> u32 {
 /// Sessions late by more than this when the daemon starts end silently.
 pub const QUIET_AFTER_MS: f64 = 60_000.0;
 
+/// A session can be stretched to at most this much time left.
+pub const MAX_LEFT_MS: f64 = 6.0 * 3_600_000.0;
+
 impl Timer {
     pub fn paused(&self) -> bool {
         self.phase != Phase::Idle && !self.running && !self.fresh
@@ -199,6 +202,29 @@ impl Timer {
         } else {
             self.start(now, s)
         }
+    }
+
+    /// Add (or, negative, take away) time from the session in progress,
+    /// running or paused. A running session cut to zero ends on the next tick,
+    /// as if its time had run out; a paused one keeps at least a second so
+    /// resuming does not end it at once. Returns false when no session is in
+    /// progress (idle, or a phase queued but not started).
+    pub fn adjust(&mut self, now: f64, delta_ms: f64) -> bool {
+        if self.phase == Phase::Idle || self.fresh || !delta_ms.is_finite() {
+            return false;
+        }
+        let left = if self.running { (self.ends_at - now).max(0.0) } else { self.remaining_ms };
+        let floor = if self.running { 0.0 } else { 1000.0f64.min(left) };
+        let new_left = (left + delta_ms).clamp(floor, MAX_LEFT_MS.max(left));
+        if self.running {
+            self.ends_at = now + new_left;
+        } else {
+            self.remaining_ms = new_left;
+        }
+        // Keep the progress bar truthful: the session is now this much longer
+        // (or shorter) in total.
+        self.phase_total_ms = (self.phase_total_ms + (new_left - left)).max(new_left);
+        true
     }
 
     /// Back to idle; the set starts over. Today's count is kept.
@@ -367,6 +393,41 @@ mod tests {
         assert_eq!(t.done_in_set(&s()), 4);
         t.skip(T0, &s(), DAY);
         assert_eq!((t.phase, t.completed_focus), (Phase::Focus, 0));
+    }
+
+    #[test]
+    fn adjusting_the_session_in_progress() {
+        let mut t = Timer::default();
+        assert!(!t.adjust(T0, MIN), "nothing to adjust while idle");
+        t.start(T0, &s());
+        assert!(t.adjust(T0 + MIN, 5.0 * MIN));
+        assert_eq!(t.left_ms(T0 + MIN, &s()), 29.0 * MIN, "24 left + 5");
+        assert_eq!(t.total_ms(&s()), 30.0 * MIN, "the progress total grows too");
+        assert!((t.progress(T0 + MIN, &s()) - 1.0 / 30.0).abs() < 1e-9);
+
+        t.adjust(T0 + MIN, -10.0 * MIN);
+        assert_eq!(t.left_ms(T0 + MIN, &s()), 19.0 * MIN);
+
+        // Paused: the remaining time changes, and never drops below a second.
+        t.pause(T0 + 2.0 * MIN);
+        t.adjust(T0 + 2.0 * MIN, 1.0 * MIN);
+        assert_eq!(t.left_ms(T0 + 99.0 * MIN, &s()), 19.0 * MIN);
+        t.adjust(T0, -500.0 * MIN);
+        assert_eq!(t.remaining_ms, 1000.0);
+
+        // Running and cut to zero: the next tick ends it with an announcement.
+        t.start(T0 + 3.0 * MIN, &s());
+        t.adjust(T0 + 3.0 * MIN, -60.0 * MIN);
+        let tr = t.tick(T0 + 3.0 * MIN, &s(), DAY).unwrap();
+        assert!(tr.announce && tr.ended == Phase::Focus);
+
+        // A queued (not started) phase is not "in progress".
+        let mut q = Timer::default();
+        q.start(T0, &s());
+        q.skip(T0, &s(), DAY); // short break, auto-started
+        q.skip(T0, &s(), DAY); // focus queued, not started
+        assert!(q.fresh && !q.adjust(T0, MIN));
+        assert!(!q.adjust(T0, f64::NAN));
     }
 
     #[test]

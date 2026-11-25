@@ -101,6 +101,28 @@ fn timer_commands_and_persistence() {
 }
 
 #[test]
+fn adjusting_the_running_timer() {
+    let d = Daemon::start("adjust", |_| {});
+    let refused = d.cli(&["adjust", "5"]);
+    assert!(!refused.status.success(), "idle: nothing to adjust");
+    assert!(String::from_utf8_lossy(&refused.stderr).contains("no session in progress"));
+
+    d.ok(&["start"]);
+    d.ok(&["adjust", "+5"]);
+    let left = d.status()["leftMs"].as_f64().unwrap();
+    assert!(left > 29.9 * 60_000.0 && left <= 30.0 * 60_000.0, "25 + 5 minutes, got {left}");
+    d.ok(&["adjust", "-2"]);
+    let left = d.status()["leftMs"].as_f64().unwrap();
+    assert!(left > 27.9 * 60_000.0 && left <= 28.0 * 60_000.0, "got {left}");
+
+    // Taking all the time away ends the session, which moves on to the break.
+    d.ok(&["adjust", "-60"]);
+    wait_for(|| d.status()["phase"] == "short", "the session to end");
+    assert_eq!(d.status()["today"], 1, "it counts as finished");
+    assert_eq!(d.cli(&["adjust", "abc"]).status.code(), Some(2));
+}
+
+#[test]
 fn settings_presets_and_errors() {
     let d = Daemon::start("settings", |_| {});
     d.ok(&["set", "focusMinutes", "50"]);

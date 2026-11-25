@@ -61,12 +61,19 @@ If the engine is not running, the panel says so and offers to start it.
 | Bar icon, left click | open the panel |
 | Bar icon, right click | start / pause |
 | Bar icon, middle click | focus sound on / off |
+| Bar icon, scroll | add / take away a minute from the session in progress |
 | Panel: `Space` / `Enter` | start / pause |
 | Panel: `r` · `s` · `n` | reset · skip · sound on/off |
+| Panel: `+` · `−` | add / take away a minute |
 | Panel: `1`–`3`, `←` `→` | Timer · Noise · Alerts pages |
 
 The bar shows the remaining time while a session runs. The icon changes for
 focus (󰔛), breaks (󰅶) and pause (󰏤).
+
+On the Timer page, under Start / Reset / Skip, **−5 · −1 · +1 · +5 min**
+change the session in progress (focus or break, running or paused) without
+touching your settings. Taking all its time away ends it as if it had run
+out, with its alert.
 
 - **Timer**: method presets (25/5, 50/10, 52/17, 90/20) with the evidence for
   each, sliders for focus / short break / long break / sessions per set, and
@@ -117,6 +124,7 @@ which a binaural beat needs exactly as generated.
 
 ```bash
 omarchy-focus toggle | start | pause | reset | skip
+omarchy-focus adjust +5                    # or -2: change the session in progress
 omarchy-focus sound [on|off|toggle]
 omarchy-focus preset timer classic|deep|desktime|ultradian
 omarchy-focus preset sound speech|white|brown|beta|gamma|alpha|iso40

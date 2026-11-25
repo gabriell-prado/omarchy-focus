@@ -20,6 +20,8 @@
   "action.resume": "Resume",
   "action.reset": "Reset",
   "action.skip": "Skip",
+  "adjust.more": "Add time to this session",
+  "adjust.less": "Take time off this session",
 
   "tab.timer": "Timer",
   "tab.noise": "Noise",

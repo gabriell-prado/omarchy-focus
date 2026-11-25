@@ -55,6 +55,31 @@ Column {
     }
   }
 
+  // ---------- Add / take away time from the session in progress ----------
+  Row {
+    id: adjustRow
+    width: parent.width
+    spacing: Style.space(6)
+    readonly property var steps: [-5, -1, 1, 5]
+    readonly property real cell: (width - spacing * (steps.length - 1)) / steps.length
+    readonly property bool usable: !!(page.svc && page.svc.canAdjust)
+
+    Repeater {
+      model: adjustRow.steps
+      PanelButton {
+        required property var modelData
+        ctx: page.ctx
+        width: adjustRow.cell
+        verticalPadding: Style.spacing.controlPaddingY
+        text: (modelData > 0 ? "+" : "−") + page.ctx.minutes(Math.abs(modelData))
+        tooltipText: page.ctx.t(modelData > 0 ? "adjust.more" : "adjust.less")
+        enabled: adjustRow.usable
+        opacity: enabled ? 1 : 0.4
+        onClicked: page.svc.adjust(modelData)
+      }
+    }
+  }
+
   PanelSeparator { width: parent.width; foreground: page.ctx.fg }
 
   PanelSectionHeader { text: page.ctx.t("timer.method"); foreground: page.ctx.fg; fontFamily: page.ctx.fontFamily }

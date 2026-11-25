@@ -25,6 +25,8 @@ pub enum Command {
     Pause,
     Reset,
     Skip,
+    /// Add (or, negative, take away) minutes from the session in progress.
+    Adjust { minutes: f64 },
     Set { patch: Map<String, Value> },
     Preset { kind: PresetKind, id: String },
     /// Switch the focus sound on or off; without `on`, toggle it.
@@ -81,6 +83,7 @@ mod tests {
             parse(r#"{"cmd":"preset","kind":"sound","id":"beta"}"#).unwrap(),
             Command::Preset { kind: PresetKind::Sound, id: "beta".into() }
         );
+        assert_eq!(parse(r#"{"cmd":"adjust","minutes":-5}"#).unwrap(), Command::Adjust { minutes: -5.0 });
         assert!(parse(r#"{"cmd":"explode"}"#).is_err());
         assert!(parse("not json").is_err());
     }

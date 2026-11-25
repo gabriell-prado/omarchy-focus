@@ -17,6 +17,7 @@ omarchy-focus: Pomodoro timer and research-based focus sounds for Omarchy
 
 Usage:
   omarchy-focus toggle | start | pause | reset | skip
+  omarchy-focus adjust <minutes>             add (+5) or take away (-5) time now
   omarchy-focus sound [on|off|toggle]        focus sound on/off
   omarchy-focus preset timer <id>            classic | deep | desktime | ultradian
   omarchy-focus preset sound <id>            speech | white | brown | beta | gamma | alpha | iso40
@@ -73,6 +74,11 @@ fn request_for(args: &[String]) -> Result<Value, String> {
             Some(other) => return Err(format!("sound takes on, off or toggle, not '{other}'")),
         },
         "alert" => json!({ "cmd": "alert", "id": arg(1, "alert id")? }),
+        "adjust" => {
+            let raw = arg(1, "minutes (e.g. +5 or -2)")?;
+            let minutes: f64 = raw.trim().parse().map_err(|_| format!("not a number of minutes: '{raw}'"))?;
+            json!({ "cmd": "adjust", "minutes": minutes })
+        }
         "preset" => json!({ "cmd": "preset", "kind": arg(1, "preset kind (timer|sound)")?, "id": arg(2, "preset id")? }),
         "set" => {
             let key = arg(1, "setting name")?;
