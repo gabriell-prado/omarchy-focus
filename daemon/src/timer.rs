@@ -227,6 +227,25 @@ impl Timer {
         true
     }
 
+    /// Set how much time is left in the session in progress (dragging the
+    /// time bar). Unlike adjust(), the session's total length is kept, so this
+    /// moves the bar rather than stretching it. Running and set to zero, the
+    /// session ends on the next tick; paused, at least a second is left.
+    pub fn seek(&mut self, now: f64, left_ms: f64) -> bool {
+        if self.phase == Phase::Idle || self.fresh || !left_ms.is_finite() {
+            return false;
+        }
+        let floor = if self.running { 0.0 } else { 1000.0 };
+        let left = left_ms.clamp(floor, MAX_LEFT_MS);
+        if self.running {
+            self.ends_at = now + left;
+        } else {
+            self.remaining_ms = left;
+        }
+        self.phase_total_ms = self.phase_total_ms.max(left);
+        true
+    }
+
     /// Back to idle; the set starts over. Today's count is kept.
     pub fn reset(&mut self) {
         self.running = false;
@@ -428,6 +447,28 @@ mod tests {
         q.skip(T0, &s(), DAY); // focus queued, not started
         assert!(q.fresh && !q.adjust(T0, MIN));
         assert!(!q.adjust(T0, f64::NAN));
+    }
+
+    #[test]
+    fn seeking_moves_the_session_without_changing_its_length() {
+        let mut t = Timer::default();
+        assert!(!t.seek(T0, MIN), "nothing to seek while idle");
+        t.start(T0, &s());
+        assert!(t.seek(T0, 10.0 * MIN));
+        assert_eq!(t.left_ms(T0, &s()), 10.0 * MIN);
+        assert_eq!(t.total_ms(&s()), 25.0 * MIN, "the length is kept");
+        assert!((t.progress(T0, &s()) - 0.6).abs() < 1e-9);
+
+        t.pause(T0);
+        t.seek(T0, 0.0);
+        assert_eq!(t.remaining_ms, 1000.0, "paused keeps a second");
+        t.seek(T0, 40.0 * MIN);
+        assert_eq!(t.total_ms(&s()), 40.0 * MIN, "seeking past the length stretches it");
+
+        t.start(T0, &s());
+        t.seek(T0, 0.0);
+        assert!(t.tick(T0, &s(), DAY).unwrap().announce, "running and seeked to the end: it ends normally");
+        assert!(!t.seek(T0, f64::NAN));
     }
 
     #[test]

@@ -185,6 +185,14 @@ impl Core {
                     return protocol::error("no session in progress");
                 }
             }
+            Command::Seek { left_ms } => {
+                if !left_ms.is_finite() || left_ms < 0.0 || left_ms > timer::MAX_LEFT_MS {
+                    return protocol::error("leftMs must be between 0 and 6 hours");
+                }
+                if !self.timer.seek(now, left_ms) {
+                    return protocol::error("no session in progress");
+                }
+            }
             Command::Set { patch } => match self.settings.patched(&patch) {
                 Ok(s) => self.set_settings(s),
                 Err(e) => return protocol::error(e),

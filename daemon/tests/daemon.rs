@@ -115,6 +115,14 @@ fn adjusting_the_running_timer() {
     let left = d.status()["leftMs"].as_f64().unwrap();
     assert!(left > 27.9 * 60_000.0 && left <= 28.0 * 60_000.0, "got {left}");
 
+    // Seeking sets the time left and keeps the session's length.
+    d.ok(&["seek", "10:30"]);
+    let s = d.status();
+    let left = s["leftMs"].as_f64().unwrap();
+    assert!(left > 10.4 * 60_000.0 && left <= 10.5 * 60_000.0, "got {left}");
+    assert_eq!(s["totalMs"], 28 * 60_000, "length unchanged by seeking");
+    assert_eq!(d.cli(&["seek", "soon"]).status.code(), Some(2));
+
     // Taking all the time away ends the session, which moves on to the break.
     d.ok(&["adjust", "-60"]);
     wait_for(|| d.status()["phase"] == "short", "the session to end");

@@ -102,6 +102,8 @@ Item {
   function skip() { send({ cmd: "skip" }) }
   // Add (or, negative, take away) minutes from the session in progress.
   function adjust(minutes) { if (canAdjust) send({ cmd: "adjust", minutes: minutes }) }
+  // Set the time left in the session in progress, keeping its length.
+  function seek(leftMs) { if (canAdjust) send({ cmd: "seek", leftMs: Math.max(0, Math.round(leftMs)) }) }
 
   function update(patch) { send({ cmd: "set", patch: patch }) }
   function applyTimerPreset(id) { send({ cmd: "preset", kind: "timer", id: id }) }

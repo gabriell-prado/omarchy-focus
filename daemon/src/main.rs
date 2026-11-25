@@ -18,6 +18,7 @@ omarchy-focus: Pomodoro timer and research-based focus sounds for Omarchy
 Usage:
   omarchy-focus toggle | start | pause | reset | skip
   omarchy-focus adjust <minutes>             add (+5) or take away (-5) time now
+  omarchy-focus seek <time left>             set the time left: 12:30 or 12.5 (minutes)
   omarchy-focus sound [on|off|toggle]        focus sound on/off
   omarchy-focus preset timer <id>            classic | deep | desktime | ultradian
   omarchy-focus preset sound <id>            speech | white | brown | beta | alpha | iso40
@@ -74,6 +75,16 @@ fn request_for(args: &[String]) -> Result<Value, String> {
             Some(other) => return Err(format!("sound takes on, off or toggle, not '{other}'")),
         },
         "alert" => json!({ "cmd": "alert", "id": arg(1, "alert id")? }),
+        "seek" => {
+            let raw = arg(1, "time left (e.g. 12:30 or 12.5)")?;
+            let minutes = match raw.trim().split_once(':') {
+                Some((m, s)) => m.trim().parse::<f64>().ok().zip(s.trim().parse::<f64>().ok()).map(|(m, s)| m + s / 60.0),
+                None => raw.trim().parse::<f64>().ok(),
+            }
+            .filter(|m| m.is_finite() && *m >= 0.0)
+            .ok_or_else(|| format!("not a time: '{raw}'"))?;
+            json!({ "cmd": "seek", "leftMs": (minutes * 60_000.0).round() })
+        }
         "adjust" => {
             let raw = arg(1, "minutes (e.g. +5 or -2)")?;
             let minutes: f64 = raw.trim().parse().map_err(|_| format!("not a number of minutes: '{raw}'"))?;

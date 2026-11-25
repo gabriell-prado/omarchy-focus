@@ -28,6 +28,7 @@ printf '{"cmd":"status"}\n' | socat - UNIX-CONNECT:"$XDG_RUNTIME_DIR/omarchy-foc
 | `subscribe` | | keep this connection: `catalog` once, then `state` on every change |
 | `status` | | reply carries `state` |
 | `toggle` `start` `pause` `reset` `skip` | | timer control (`reset` also restarts the set; today's count is kept) |
+| `seek` | `leftMs`: number (0–6 h) | set the time left in the session in progress, keeping its length (dragging the time bar); a running session set to 0 ends with its alert |
 | `adjust` | `minutes`: number (±360) | add or take away time from the session in progress (running or paused); a running session cut to zero ends with its alert. Error `no session in progress` when idle or the next phase has not started |
 | `set` | `patch`: object | change settings; unknown keys and invalid values are an error, numbers are clamped to their range |
 | `preset` | `kind`: `timer`\|`sound`, `id` | apply a preset; a sound preset also switches the sound on |

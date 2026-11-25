@@ -80,6 +80,10 @@ change the session in progress (focus or break, running or paused) without
 touching your settings. Taking all its time away ends it as if it had run
 out, with its alert.
 
+The time bar under the clock can be dragged: it sets how far the session in
+progress is (the clock previews the time left while you drag) and keeps the
+session's length. Dragging it to the end finishes the session.
+
 - **Timer**: method presets (25/5, 50/10, 52/17, 90/20) with the evidence for
   each, sliders for focus / short break / long break / sessions per set, and
   auto-start switches.
@@ -132,6 +136,7 @@ which a binaural beat needs exactly as generated.
 ```bash
 omarchy-focus toggle | start | pause | reset | skip
 omarchy-focus adjust +5                    # or -2: change the session in progress
+omarchy-focus seek 12:30                   # set the time left (keeps the length)
 omarchy-focus sound [on|off|toggle]
 omarchy-focus preset timer classic|deep|desktime|ultradian
 omarchy-focus preset sound speech|white|brown|beta|alpha|iso40

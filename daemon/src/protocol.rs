@@ -27,6 +27,11 @@ pub enum Command {
     Skip,
     /// Add (or, negative, take away) minutes from the session in progress.
     Adjust { minutes: f64 },
+    /// Set the time left in the session in progress, keeping its length.
+    Seek {
+        #[serde(rename = "leftMs")]
+        left_ms: f64,
+    },
     Set { patch: Map<String, Value> },
     Preset { kind: PresetKind, id: String },
     /// Switch the focus sound on or off; without `on`, toggle it.
@@ -84,6 +89,7 @@ mod tests {
             Command::Preset { kind: PresetKind::Sound, id: "beta".into() }
         );
         assert_eq!(parse(r#"{"cmd":"adjust","minutes":-5}"#).unwrap(), Command::Adjust { minutes: -5.0 });
+        assert_eq!(parse(r#"{"cmd":"seek","leftMs":90000}"#).unwrap(), Command::Seek { left_ms: 90000.0 });
         assert!(parse(r#"{"cmd":"explode"}"#).is_err());
         assert!(parse("not json").is_err());
     }

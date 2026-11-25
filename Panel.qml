@@ -80,7 +80,9 @@ Panel {
   readonly property real progress: svc ? svc.progress : 0
   readonly property int doneInSet: svc ? svc.doneInSet : 0
   readonly property int todayCount: svc ? svc.todayCount : 0
-  readonly property string clock: uiCtx.digits(Model.formatClock(svc ? svc.leftMs : 0))
+  // While the time bar is dragged, the clocks preview where it would land.
+  property real scrubLeftMs: -1
+  readonly property string clock: uiCtx.digits(Model.formatClock(scrubLeftMs >= 0 ? scrubLeftMs : (svc ? svc.leftMs : 0)))
 
   readonly property string phaseName: uiCtx.t("phase." + phase)
   readonly property string phaseLine: {
@@ -385,15 +387,43 @@ Panel {
             }
           }
 
-          // ---------- Progress ----------
+          // ---------- Time bar: drag it to set how far the session is ----------
           Item {
+            id: timeBar
             visible: root.online
             width: parent.width
-            implicitHeight: Style.space(6)
+            // A taller grab area than the 6 px line it draws.
+            implicitHeight: Style.space(16)
+
+            readonly property bool usable: !!(root.svc && root.svc.canAdjust)
+            readonly property real total: root.svc ? root.svc.totalMs : 0
+            readonly property bool mirrored: LayoutMirroring.enabled
+            property bool dragging: false
+            // After release, keep showing the dragged position until the
+            // engine's new state arrives, so the bar does not jump back.
+            property bool holding: false
+            property real dragProgress: 0
+            readonly property real shown: dragging || holding ? dragProgress : root.progress
+
+            function progressAt(x) {
+              var f = Math.max(0, Math.min(1, x / Math.max(1, width)))
+              return mirrored ? 1 - f : f
+            }
+            // Whole seconds left at a given progress.
+            function leftAt(p) { return Math.round(total * (1 - p) / 1000) * 1000 }
+
+            Connections {
+              target: root.svc
+              function onEngineChanged() { timeBar.holding = false }
+            }
+            Timer { id: holdTimeout; interval: 600; onTriggered: timeBar.holding = false }
 
             Rectangle {
               id: track
-              anchors.fill: parent
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              height: Style.space(6)
               radius: height / 2
               color: Qt.rgba(uiCtx.fg.r, uiCtx.fg.g, uiCtx.fg.b, 0.12)
             }
@@ -403,9 +433,56 @@ Panel {
               height: track.height
               radius: track.radius
               color: uiCtx.fg
-              visible: root.progress > 0
-              width: Math.max(track.height, track.width * root.progress)
-              Behavior on width { NumberAnimation { duration: Style.duration(240); easing.type: Easing.OutCubic } }
+              visible: timeBar.shown > 0
+              width: Math.max(track.height, track.width * timeBar.shown)
+              Behavior on width {
+                enabled: !timeBar.dragging && !timeBar.holding
+                NumberAnimation { duration: Style.duration(240); easing.type: Easing.OutCubic }
+              }
+            }
+            // The knob shows where to grab, on hover and while dragging.
+            BorderSurface {
+              readonly property real size: Style.space(14)
+              visible: timeBar.usable && (grab.containsMouse || timeBar.dragging)
+              width: size
+              height: size
+              radius: size / 2
+              color: uiCtx.fg
+              borderSpec: Border.flat(root.bar ? root.bar.background : "#101315", Math.max(1, Style.space(2)))
+              anchors.verticalCenter: track.verticalCenter
+              x: track.width * (timeBar.mirrored ? 1 - timeBar.shown : timeBar.shown) - width / 2
+            }
+
+            MouseArea {
+              id: grab
+              anchors.fill: parent
+              enabled: timeBar.usable
+              hoverEnabled: true
+              cursorShape: timeBar.usable ? Qt.PointingHandCursor : Qt.ArrowCursor
+              // A sideways drag here moves the session, never the panel.
+              preventStealing: true
+
+              function follow(x) {
+                timeBar.dragProgress = timeBar.progressAt(x)
+                root.scrubLeftMs = timeBar.leftAt(timeBar.dragProgress)
+              }
+              onPressed: function(event) {
+                timeBar.dragging = true
+                follow(event.x)
+              }
+              onPositionChanged: function(event) { if (timeBar.dragging) follow(event.x) }
+              onReleased: {
+                if (!timeBar.dragging) return
+                timeBar.dragging = false
+                timeBar.holding = true
+                holdTimeout.restart()
+                root.svc.seek(timeBar.leftAt(timeBar.dragProgress))
+                root.scrubLeftMs = -1
+              }
+              onCanceled: {
+                timeBar.dragging = false
+                root.scrubLeftMs = -1
+              }
             }
           }
 
